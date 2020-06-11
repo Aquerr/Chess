@@ -1,15 +1,10 @@
-package pl.bartlomiejstepien.chess.entity;
+package pl.bartlomiejstepien.chess.piece;
 
-import javafx.scene.effect.ColorInput;
-import javafx.scene.paint.Color;
 import pl.bartlomiejstepien.chess.ChessBoard;
 import pl.bartlomiejstepien.chess.ChessGame;
 import pl.bartlomiejstepien.chess.ChessboardPosition;
 
-import java.util.LinkedList;
-import java.util.List;
-
-public class King extends ChessFigure
+public class King extends ChessPiece
 {
 
     public King(Side side, ChessboardPosition position)
@@ -32,10 +27,10 @@ public class King extends ChessFigure
 
         //TODO: Block moving to tiles that can be attacked by enemy chess.
         // Validate movement
-        final ChessFigure chessFigureAtNewPosition = ChessGame.getGame().getChessBoard().getFigureAt(newPosition.getRow(), newPosition.getColumn());
+        final ChessPiece chessPieceAtNewPosition = ChessGame.getGame().getChessBoard().getFigureAt(newPosition.getRow(), newPosition.getColumn());
         if (absDistanceX > 1 || absDistanceY > 1)
             return false;
 
-        return chessFigureAtNewPosition == null || !chessFigureAtNewPosition.getSide().equals(this.getSide());
+        return chessPieceAtNewPosition == null || !chessPieceAtNewPosition.getSide().equals(this.getSide());
     }
 }

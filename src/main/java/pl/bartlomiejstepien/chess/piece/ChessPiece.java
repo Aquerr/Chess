@@ -1,4 +1,4 @@
-package pl.bartlomiejstepien.chess.entity;
+package pl.bartlomiejstepien.chess.piece;
 
 import javafx.scene.effect.ColorInput;
 import javafx.scene.image.Image;
@@ -9,10 +9,10 @@ import pl.bartlomiejstepien.chess.ChessBoard;
 import pl.bartlomiejstepien.chess.ChessGame;
 import pl.bartlomiejstepien.chess.ChessboardPosition;
 
-import java.util.List;
+import java.net.URL;
 import java.util.Optional;
 
-public abstract class ChessFigure
+public abstract class ChessPiece
 {
     private ChessboardPosition tilePosition;
     private Side side;
@@ -24,16 +24,17 @@ public abstract class ChessFigure
     private double lastX;
     private double lastY;
 
-    protected ChessFigure(final Side side, final ChessboardPosition tilePosition, final String imageUrl)
+    protected ChessPiece(final Side side, final ChessboardPosition position, final String imageUrl)
     {
-        this.side = side;
-        this.tilePosition = tilePosition;
-        final ChessBoard chessBoard = ChessGame.getGame().getChessBoard();
+        this.tilePosition = position;
 
-        if (tilePosition.getRow() > 8 || tilePosition.getRow() < 1)
-            throw new IllegalArgumentException("Figure position must be inside 8x8 chessboard. Provided value {column=" + tilePosition.getColumn() + "} is outside the board!");
-        if (tilePosition.getColumn() > 8 || tilePosition.getColumn() < 1)
-            throw new IllegalArgumentException("Figure position must be inside 8x8 chessboard. Provided value {row=" + tilePosition.getRow() + "} is outside the board!");
+        if (this.tilePosition.getRow() > 8 || this.tilePosition.getRow() < 1)
+            throw new IllegalArgumentException("Figure position must be inside 8x8 chessboard. Provided value {column=" + this.tilePosition.getColumn() + "} is outside the board!");
+        if (this.tilePosition.getColumn() > 8 || this.tilePosition.getColumn() < 1)
+            throw new IllegalArgumentException("Figure position must be inside 8x8 chessboard. Provided value {row=" + this.tilePosition.getRow() + "} is outside the board!");
+
+        this.side = side;
+        final ChessBoard chessBoard = ChessGame.getGame().getChessBoard();
 
         chessBoard.putFigureAtTile(tilePosition.getRow(), tilePosition.getColumn(), this);
 
@@ -147,7 +148,7 @@ public abstract class ChessFigure
     {
         final ChessGame chessGame = ChessGame.getGame();
         final ChessBoard chessBoard = chessGame.getChessBoard();
-        final ChessFigure figureAtTile = chessBoard.getFigureAt(tile.getRow(), tile.getColumn());
+        final ChessPiece figureAtTile = chessBoard.getFigureAt(tile.getRow(), tile.getColumn());
 
         if (figureAtTile != null)
         {

@@ -6,16 +6,15 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
-import pl.bartlomiejstepien.chess.entity.ChessFigure;
+import pl.bartlomiejstepien.chess.piece.ChessPiece;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
 public class ChessBoard
 {
-    private final ChessFigure[][] chessBoardFigures = new ChessFigure[8][8];
+    private final ChessPiece[][] chessBoardFigures = new ChessPiece[8][8];
     private final Tile[][] chessBoardTiles = new Tile[8][8];
 
     public Tile[][] getChessBoardTiles()
@@ -48,7 +47,7 @@ public class ChessBoard
         }
     }
 
-    public ChessFigure getFigureAt(final int row, final int column)
+    public ChessPiece getFigureAt(final int row, final int column)
     {
         try
         {
@@ -103,9 +102,9 @@ public class ChessBoard
         return Optional.empty();
     }
 
-    public void putFigureAtTile(int row, int column, ChessFigure chessFigure)
+    public void putFigureAtTile(int row, int column, ChessPiece chessPiece)
     {
-        this.chessBoardFigures[row - 1][column - 1] = chessFigure;
+        this.chessBoardFigures[row - 1][column - 1] = chessPiece;
     }
 
     public static final class Tile

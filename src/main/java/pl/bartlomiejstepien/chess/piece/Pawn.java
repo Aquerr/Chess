@@ -1,4 +1,4 @@
-package pl.bartlomiejstepien.chess.entity;
+package pl.bartlomiejstepien.chess.piece;
 
 import pl.bartlomiejstepien.chess.ChessBoard;
 import pl.bartlomiejstepien.chess.ChessGame;
@@ -6,7 +6,7 @@ import pl.bartlomiejstepien.chess.ChessboardPosition;
 
 import java.util.List;
 
-public class Pawn extends ChessFigure
+public class Pawn extends ChessPiece
 {
     boolean isFirstMove = true;
 
@@ -35,17 +35,17 @@ public class Pawn extends ChessFigure
 
     private void replaceWithBestLostFigureWhite()
     {
-        final List<ChessFigure> figures = ChessGame.getGame().getAliveWhiteFigures();
+        final List<ChessPiece> figures = ChessGame.getGame().getAliveWhiteFigures();
         replaceWithBestLostFigure(figures);
     }
 
     private void replaceWithBestLostFigureBlack()
     {
-        final List<ChessFigure> figures = ChessGame.getGame().getAliveBlackFigures();
+        final List<ChessPiece> figures = ChessGame.getGame().getAliveBlackFigures();
         replaceWithBestLostFigure(figures);
     }
 
-    private void replaceWithBestLostFigure(final List<ChessFigure> aliveFigures)
+    private void replaceWithBestLostFigure(final List<ChessPiece> aliveFigures)
     {
         boolean containsQueen = false;
         boolean containsBishop = false;
@@ -97,18 +97,18 @@ public class Pawn extends ChessFigure
         }
 
         // Validate movement
-        final ChessFigure chessFigureAtNewPosition = ChessGame.getGame().getChessBoard().getFigureAt(newPosition.getRow(), newPosition.getColumn());
+        final ChessPiece chessPieceAtNewPosition = ChessGame.getGame().getChessBoard().getFigureAt(newPosition.getRow(), newPosition.getColumn());
         if (absDistanceY == 1 && absDistanceX == 0) // One tile (normal move)
         {
-            return chessFigureAtNewPosition == null;
+            return chessPieceAtNewPosition == null;
         }
         else if (absDistanceY == 2 && isFirstMove && absDistanceX == 0) // Two tiles (first move)
         {
-            return chessFigureAtNewPosition == null;
+            return chessPieceAtNewPosition == null;
         }
         else if (absDistanceY == 1 && absDistanceX == 1) // Diagonal move (attack)
         {
-            return chessFigureAtNewPosition != null && !chessFigureAtNewPosition.getSide().equals(this.getSide());
+            return chessPieceAtNewPosition != null && !chessPieceAtNewPosition.getSide().equals(this.getSide());
         }
         else return false;
     }

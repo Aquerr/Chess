@@ -5,10 +5,7 @@ import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import pl.bartlomiejstepien.chess.entity.ChessFigure;
-import pl.bartlomiejstepien.chess.entity.King;
-import pl.bartlomiejstepien.chess.entity.Pawn;
-import pl.bartlomiejstepien.chess.entity.Side;
+import pl.bartlomiejstepien.chess.piece.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,8 +21,8 @@ public class ChessGame extends Application
     private Group root;
     private Group chessBoardGroup;
 
-    private List<ChessFigure> aliveWhiteFigures = new ArrayList<>();
-    private List<ChessFigure> aliveBlackFigures = new ArrayList<>();
+    private List<ChessPiece> aliveWhiteFigures = new ArrayList<>();
+    private List<ChessPiece> aliveBlackFigures = new ArrayList<>();
 
     private boolean isWhiteMove = true;
 
@@ -82,20 +79,33 @@ public class ChessGame extends Application
             this.aliveWhiteFigures.add(whitePawn);
         }
 
+        // Kings
         final King blackKing = new King(Side.BLACK, new ChessboardPosition(1,5));
         final King whiteKing = new King(Side.WHITE, new ChessboardPosition(8,5));
         this.aliveBlackFigures.add(blackKing);
         this.aliveWhiteFigures.add(whiteKing);
 
+        // Rooks
+
+        // Knights
+        final Knight blackKnight1 = new Knight(Side.BLACK, new ChessboardPosition(1, 2));
+        final Knight blackKnight2 = new Knight(Side.BLACK, new ChessboardPosition(1, 7));
+        final Knight whiteKnight1 = new Knight(Side.WHITE, new ChessboardPosition(8, 2));
+        final Knight whiteKnight2 = new Knight(Side.WHITE, new ChessboardPosition(8, 7));
+        this.aliveBlackFigures.add(blackKnight1);
+        this.aliveBlackFigures.add(blackKnight2);
+        this.aliveWhiteFigures.add(whiteKnight1);
+        this.aliveWhiteFigures.add(whiteKnight2);
+
         // Add figure rectangles/boxes to view
-        for (final ChessFigure chessFigure : this.aliveWhiteFigures)
+        for (final ChessPiece chessPiece : this.aliveWhiteFigures)
         {
-            this.chessBoardGroup.getChildren().add(chessFigure.getRectangle());
+            this.chessBoardGroup.getChildren().add(chessPiece.getRectangle());
         }
 
-        for (final ChessFigure chessFigure : this.aliveBlackFigures)
+        for (final ChessPiece chessPiece : this.aliveBlackFigures)
         {
-            this.chessBoardGroup.getChildren().add(chessFigure.getRectangle());
+            this.chessBoardGroup.getChildren().add(chessPiece.getRectangle());
         }
     }
 
@@ -137,12 +147,12 @@ public class ChessGame extends Application
         return this.chessBoard;
     }
 
-    public List<ChessFigure> getAliveWhiteFigures()
+    public List<ChessPiece> getAliveWhiteFigures()
     {
         return this.aliveWhiteFigures;
     }
 
-    public List<ChessFigure> getAliveBlackFigures()
+    public List<ChessPiece> getAliveBlackFigures()
     {
         return this.aliveBlackFigures;
     }
