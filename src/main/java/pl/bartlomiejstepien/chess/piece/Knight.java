@@ -25,12 +25,10 @@ public class Knight extends ChessPiece
         // Validate movement
         final ChessPiece chessPieceAtNewPosition = ChessGame.getGame().getChessBoard().getFigureAt(tile.getRow(), tile.getColumn());
 
-        //Up and down
         if (absDistanceY == 2 && absDistanceX == 1)
-            return chessPieceAtNewPosition == null || !chessPieceAtNewPosition.getSide().equals(this.getSide());
-        //Right and left
+            return chessPieceAtNewPosition == null || !chessPieceAtNewPosition.getSide().equals(super.getSide());
         else if (absDistanceX == 2 && absDistanceY == 1)
-            return chessPieceAtNewPosition == null || !chessPieceAtNewPosition.getSide().equals(this.getSide());
+            return chessPieceAtNewPosition == null || !chessPieceAtNewPosition.getSide().equals(super.getSide());
         return false;
     }
 }

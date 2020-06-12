@@ -1,14 +1,23 @@
 package pl.bartlomiejstepien.chess;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import pl.bartlomiejstepien.chess.piece.*;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class ChessGame extends Application
 {
@@ -20,6 +29,12 @@ public class ChessGame extends Application
     private Scene scene;
     private Group root;
     private Group chessBoardGroup;
+
+    private Label labelCurrentMove;
+    private Label labelTimer;
+
+    private Timer timer;
+    private int seconds;
 
     private List<ChessPiece> aliveWhiteFigures = new ArrayList<>();
     private List<ChessPiece> aliveBlackFigures = new ArrayList<>();
@@ -45,6 +60,7 @@ public class ChessGame extends Application
     public void setWhiteMove(boolean whiteMove)
     {
         isWhiteMove = whiteMove;
+        Platform.runLater(() -> labelCurrentMove.setText("Current move: " + (this.isWhiteMove ? "white" : "black")));
     }
 
     @Override
@@ -53,6 +69,30 @@ public class ChessGame extends Application
         this.stage = primaryStage;
         this.root = new Group();
         this.scene = new Scene(root, 600, 600);
+
+        this.labelCurrentMove = new Label("Current move: " + (this.isWhiteMove ? "white" : "black"));
+        this.labelCurrentMove.setFont(Font.font("Arial", FontWeight.MEDIUM, FontPosture.REGULAR, 20));
+        this.labelCurrentMove.setTranslateX(60);
+        this.labelCurrentMove.setTranslateY(15);
+        this.root.getChildren().add(this.labelCurrentMove);
+
+        this.labelTimer = new Label("Time: 00:00:00");
+        this.root.getChildren().add(this.labelTimer);
+        this.labelTimer.setTranslateX(390);
+        this.labelTimer.setTranslateY(15);
+        this.labelTimer.setFont(Font.font("Arial", FontWeight.MEDIUM, FontPosture.REGULAR, 20));
+
+        this.timer = new Timer();
+        final TimerTask timerTask = new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                seconds++;
+                Platform.runLater(() -> labelTimer.setText("Time: " + LocalTime.MIN.plusSeconds(seconds).format(DateTimeFormatter.ISO_LOCAL_TIME)));
+            }
+        };
+        this.timer.scheduleAtFixedRate(timerTask, 0, 1000L);
 
         this.chessBoardGroup = new Group();
         root.getChildren().add(chessBoardGroup);
@@ -75,27 +115,33 @@ public class ChessGame extends Application
         {
             final Pawn blackPawn = new Pawn(Side.BLACK, new ChessboardPosition(2, i));
             final Pawn whitePawn = new Pawn(Side.WHITE, new ChessboardPosition(7, i));
-            this.aliveBlackFigures.add(blackPawn);
-            this.aliveWhiteFigures.add(whitePawn);
         }
 
         // Kings
         final King blackKing = new King(Side.BLACK, new ChessboardPosition(1,5));
         final King whiteKing = new King(Side.WHITE, new ChessboardPosition(8,5));
-        this.aliveBlackFigures.add(blackKing);
-        this.aliveWhiteFigures.add(whiteKing);
+
+        // Queens
+        final Queen blackQueen = new Queen(Side.BLACK, new ChessboardPosition(1, 4));
+        final Queen whiteQueen = new Queen(Side.WHITE, new ChessboardPosition(8, 4));
 
         // Rooks
+        final Rook blackRook1 = new Rook(Side.BLACK, new ChessboardPosition(1, 1));
+        final Rook blackRook2 = new Rook(Side.BLACK, new ChessboardPosition(1, 8));
+        final Rook whiteRook1 = new Rook(Side.WHITE, new ChessboardPosition(8, 1));
+        final Rook whiteRook2 = new Rook(Side.WHITE, new ChessboardPosition(8, 8));
 
         // Knights
         final Knight blackKnight1 = new Knight(Side.BLACK, new ChessboardPosition(1, 2));
         final Knight blackKnight2 = new Knight(Side.BLACK, new ChessboardPosition(1, 7));
         final Knight whiteKnight1 = new Knight(Side.WHITE, new ChessboardPosition(8, 2));
         final Knight whiteKnight2 = new Knight(Side.WHITE, new ChessboardPosition(8, 7));
-        this.aliveBlackFigures.add(blackKnight1);
-        this.aliveBlackFigures.add(blackKnight2);
-        this.aliveWhiteFigures.add(whiteKnight1);
-        this.aliveWhiteFigures.add(whiteKnight2);
+
+        // Bishops
+        final Bishop blackBishop1 = new Bishop(Side.BLACK, new ChessboardPosition(1, 3));
+        final Bishop blackBishop2 = new Bishop(Side.BLACK, new ChessboardPosition(1, 6));
+        final Bishop whiteBishop1 = new Bishop(Side.WHITE, new ChessboardPosition(8, 3));
+        final Bishop whiteBishop2 = new Bishop(Side.WHITE, new ChessboardPosition(8, 6));
 
         // Add figure rectangles/boxes to view
         for (final ChessPiece chessPiece : this.aliveWhiteFigures)

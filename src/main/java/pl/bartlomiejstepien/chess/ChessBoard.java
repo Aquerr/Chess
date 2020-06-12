@@ -143,6 +143,16 @@ public class ChessBoard
         {
             return this.rectangle;
         }
+
+        @Override
+        public String toString()
+        {
+            return "Tile{" +
+                    "row=" + row +
+                    ", column=" + column +
+                    ", rectangle=" + rectangle +
+                    '}';
+        }
     }
 
     public static class HighlightTileEventHandler implements EventHandler<MouseEvent>

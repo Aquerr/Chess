@@ -9,7 +9,6 @@ import pl.bartlomiejstepien.chess.ChessBoard;
 import pl.bartlomiejstepien.chess.ChessGame;
 import pl.bartlomiejstepien.chess.ChessboardPosition;
 
-import java.net.URL;
 import java.util.Optional;
 
 public abstract class ChessPiece
@@ -34,7 +33,8 @@ public abstract class ChessPiece
             throw new IllegalArgumentException("Figure position must be inside 8x8 chessboard. Provided value {row=" + this.tilePosition.getRow() + "} is outside the board!");
 
         this.side = side;
-        final ChessBoard chessBoard = ChessGame.getGame().getChessBoard();
+        final ChessGame chessGame = ChessGame.getGame();
+        final ChessBoard chessBoard = chessGame.getChessBoard();
 
         chessBoard.putFigureAtTile(tilePosition.getRow(), tilePosition.getColumn(), this);
 
@@ -105,6 +105,11 @@ public abstract class ChessPiece
 
             moveTo(tile);
         });
+
+        // Add chess piece to alive pieces
+        if (this.side == Side.BLACK)
+            chessGame.getAliveBlackFigures().add(this);
+        else chessGame.getAliveWhiteFigures().add(this);
     }
 
     public Rectangle getRectangle()
