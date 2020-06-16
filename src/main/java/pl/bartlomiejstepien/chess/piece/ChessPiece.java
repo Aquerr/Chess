@@ -1,7 +1,9 @@
 package pl.bartlomiejstepien.chess.piece;
 
 import javafx.scene.effect.ColorInput;
+import javafx.scene.effect.Shadow;
 import javafx.scene.image.Image;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Rectangle;
@@ -9,11 +11,12 @@ import pl.bartlomiejstepien.chess.ChessBoard;
 import pl.bartlomiejstepien.chess.ChessGame;
 import pl.bartlomiejstepien.chess.ChessboardPosition;
 
+import java.util.List;
 import java.util.Optional;
 
 public abstract class ChessPiece
 {
-    private ChessboardPosition tilePosition;
+    private ChessBoard.Tile tile;
     private Side side;
 
     private Rectangle rectangle;
@@ -25,24 +28,21 @@ public abstract class ChessPiece
 
     protected ChessPiece(final Side side, final ChessboardPosition position, final String imageUrl)
     {
-        this.tilePosition = position;
-
-        if (this.tilePosition.getRow() > 8 || this.tilePosition.getRow() < 1)
-            throw new IllegalArgumentException("Figure position must be inside 8x8 chessboard. Provided value {column=" + this.tilePosition.getColumn() + "} is outside the board!");
-        if (this.tilePosition.getColumn() > 8 || this.tilePosition.getColumn() < 1)
-            throw new IllegalArgumentException("Figure position must be inside 8x8 chessboard. Provided value {row=" + this.tilePosition.getRow() + "} is outside the board!");
+        if (position.getRow() > 8 || position.getRow() < 1)
+            throw new IllegalArgumentException("Figure position must be inside 8x8 chessboard. Provided value {column=" + position.getColumn() + "} is outside the board!");
+        if (position.getColumn() > 8 || position.getColumn() < 1)
+            throw new IllegalArgumentException("Figure position must be inside 8x8 chessboard. Provided value {row=" + position.getRow() + "} is outside the board!");
 
         this.side = side;
         final ChessGame chessGame = ChessGame.getGame();
         final ChessBoard chessBoard = chessGame.getChessBoard();
 
-        chessBoard.putFigureAtTile(tilePosition.getRow(), tilePosition.getColumn(), this);
+        this.tile = chessBoard.putFigureAtTile(position.getRow(), position.getColumn(), this);
 
         this.rectangle = new Rectangle(60, 60);
         this.rectangle.setFill(Color.WHITE);
-        this.rectangle.setX(this.tilePosition.getColumn() * 60 - 60);
-        this.rectangle.setY(this.tilePosition.getRow() * 60 - 60);
-//        this.rectangle.setStroke(Color.BLACK);
+        this.rectangle.setX(position.getColumn() * 60 - 60);
+        this.rectangle.setY(position.getRow() * 60 - 60);
 
         this.image = new Image(imageUrl);
         this.rectangle.setFill(new ImagePattern(this.image));
@@ -92,10 +92,10 @@ public abstract class ChessPiece
                 return;
             }
 
-            final ChessBoard.Tile tile = optionalTile.get();
+            final ChessBoard.Tile newTile = optionalTile.get();
 
             // Check if chess figure can move to the tile the mouse is above.
-            if (!canMoveTo(tile))
+            if (!canMoveTo(newTile))
             {
                 // Bring figure back to initial position
                 this.rectangle.setX(lastX);
@@ -103,8 +103,11 @@ public abstract class ChessPiece
                 return;
             }
 
-            moveTo(tile);
+            moveTo(newTile);
         });
+
+        rectangle.addEventHandler(MouseEvent.MOUSE_ENTERED, new ChessBoard.HighlightTileEventHandler(rectangle, true));
+        rectangle.addEventHandler(MouseEvent.MOUSE_EXITED, new ChessBoard.HighlightTileEventHandler(rectangle, false));
 
         // Add chess piece to alive pieces
         if (this.side == Side.BLACK)
@@ -137,9 +140,9 @@ public abstract class ChessPiece
 //        chessBoard.getChessBoardFigures()[position.getY()][position.getX()] = this;
 //    }
 
-    public ChessboardPosition getTilePosition()
+    public ChessBoard.Tile getTile()
     {
-        return this.tilePosition;
+        return this.tile;
     }
 
     /**
@@ -147,13 +150,18 @@ public abstract class ChessPiece
      *
      * Include invocation to this method so that the figure will be properly added to the tile.
      *
-     * @param tile the tile that figure should be moved to.
+     * @param newTile the tile that figure should be moved to.
      */
-    protected void moveTo(final ChessBoard.Tile tile)
+    protected void moveTo(final ChessBoard.Tile newTile)
     {
+        if (this instanceof King && ((King) this).isThreatened())
+        {
+            this.getTile().getRectangle().setEffect(null);
+        }
+
         final ChessGame chessGame = ChessGame.getGame();
         final ChessBoard chessBoard = chessGame.getChessBoard();
-        final ChessPiece figureAtTile = chessBoard.getFigureAt(tile.getRow(), tile.getColumn());
+        final ChessPiece figureAtTile = newTile.getChessPiece();
 
         if (figureAtTile != null)
         {
@@ -165,20 +173,67 @@ public abstract class ChessPiece
             chessGame.getChessBoardView().getChildren().remove(figureAtTile.getRectangle());
         }
 
-        chessBoard.putFigureAtTile(this.tilePosition.getRow(), this.tilePosition.getColumn(), null);
-        chessBoard.putFigureAtTile(tile.getRow(), tile.getColumn(), this);
-        this.tilePosition = ChessboardPosition.from(tile.getRow(), tile.getColumn());
-        this.lastX = tile.getRectangle().getX();
-        this.lastY = tile.getRectangle().getY();
-        this.rectangle.setX(tile.getRectangle().getX());
-        this.rectangle.setY(tile.getRectangle().getY());
+        chessBoard.putFigureAtTile(this.tile.getRow(), this.tile.getColumn(), null);
+        chessBoard.putFigureAtTile(newTile.getRow(), newTile.getColumn(), this);
+        this.tile = newTile;
+        this.lastX = newTile.getRectangle().getX();
+        this.lastY = newTile.getRectangle().getY();
+        this.rectangle.setX(newTile.getRectangle().getX());
+        this.rectangle.setY(newTile.getRectangle().getY());
 
         chessGame.setWhiteMove(this.getSide() == Side.BLACK);
+
+        // Highlight king's tile if it is threatened
+        final King king = this.getSide() == Side.BLACK ? ChessGame.getGame().getWhiteKing() : ChessGame.getGame().getBlackKing();
+        if (king.isThreatened())
+        {
+            final ChessBoard.Tile kingTile = king.getTile();
+            final Rectangle kingTileRectangle = kingTile.getRectangle();
+            kingTileRectangle.setEffect(new Shadow(1, Color.RED));
+        }
+        else
+        {
+            final ChessBoard.Tile kingTile = king.getTile();
+            final Rectangle kingTileRectangle = kingTile.getRectangle();
+            kingTileRectangle.setEffect(null);
+        }
     }
 
-    public abstract boolean canMoveTo(final ChessBoard.Tile tile);
+    protected abstract boolean canMoveTo(final ChessBoard.Tile tile);
 
-//    public abstract boolean canAttack(final ChessboardPosition position);
+    protected boolean willUncoverKing()
+    {
+        // Get King
+        ChessBoard.Tile kingTile = null;
+
+        if (this.getSide() == Side.BLACK)
+            kingTile = ChessGame.getGame().getBlackKing().getTile();
+        else kingTile = ChessGame.getGame().getWhiteKing().getTile();
+
+        // Loop over all enemy chess pieces and check if any of them will be able to threat the king
+
+        boolean willKingBeThreatened = false;
+
+        //Temporary, so that we can use canMoveTo in other chess pieces
+        ChessGame.getGame().getChessBoard().putFigureAtTile(this.tile.getRow(), this.tile.getColumn(), null);
+
+        // Check if other tiles will be able to attack the king
+        List<ChessPiece> enemyPieces;
+        if (this.getSide() == Side.BLACK)
+            enemyPieces = ChessGame.getGame().getAliveWhiteFigures();
+        else enemyPieces = ChessGame.getGame().getAliveBlackFigures();
+        for (final ChessPiece chessPiece : enemyPieces)
+        {
+            if (chessPiece.canMoveTo(kingTile))
+            {
+                willKingBeThreatened = true;
+                break;
+            }
+        }
+
+        ChessGame.getGame().getChessBoard().putFigureAtTile(this.tile.getRow(), this.tile.getColumn(), this);
+        return willKingBeThreatened;
+    }
 
     public void highlightPossibleMovements()
     {

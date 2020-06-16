@@ -14,15 +14,20 @@ public class Queen extends ChessPiece
     @Override
     public boolean canMoveTo(ChessBoard.Tile tile)
     {
-        final ChessboardPosition currentPosition = super.getTilePosition();
-        if (currentPosition.getRow() == tile.getRow() && currentPosition.getColumn() == tile.getColumn())
+        if (ChessGame.getGame().isWhiteMove() && super.getSide() == Side.WHITE && willUncoverKing())
+            return false;
+        else if (!ChessGame.getGame().isWhiteMove() && super.getSide() == Side.BLACK && willUncoverKing())
             return false;
 
-        int absDistanceY = Math.abs(tile.getRow() - currentPosition.getRow());
-        int absDistanceX = Math.abs(tile.getColumn() - currentPosition.getColumn());
+        final ChessBoard.Tile currentTile = super.getTile();
+        if (currentTile.getRow() == tile.getRow() && currentTile.getColumn() == tile.getColumn())
+            return false;
+
+        int absDistanceY = Math.abs(tile.getRow() - currentTile.getRow());
+        int absDistanceX = Math.abs(tile.getColumn() - currentTile.getColumn());
 
         // Validate movement
-        final ChessPiece chessPieceAtNewPosition = ChessGame.getGame().getChessBoard().getFigureAt(tile.getRow(), tile.getColumn());
+        final ChessPiece chessPieceAtNewPosition = tile.getChessPiece();
         if (!(((absDistanceX == 0 && absDistanceY > 0) || absDistanceY == 0 && absDistanceX > 0) || absDistanceX == absDistanceY))
             return false;
 
@@ -37,39 +42,39 @@ public class Queen extends ChessPiece
         if (tile == null)
             return false;
 
-        final ChessboardPosition ourPosition = super.getTilePosition();
+        final ChessBoard.Tile ourTile = super.getTile();
 
         int newColumn = tile.getColumn();
         int newRow = tile.getRow();
 
         // Left-down
-        if (ourPosition.getColumn() < tile.getColumn() && ourPosition.getRow() > tile.getRow())
+        if (ourTile.getColumn() < tile.getColumn() && ourTile.getRow() > tile.getRow())
         {
             newColumn = tile.getColumn() - 1;
             newRow = tile.getRow() + 1;
         }
         // Left-up
-        else if (ourPosition.getColumn() < tile.getColumn() && ourPosition.getRow() < tile.getRow())
+        else if (ourTile.getColumn() < tile.getColumn() && ourTile.getRow() < tile.getRow())
         {
             newColumn = tile.getColumn() - 1;
             newRow = tile.getRow() - 1;
         }
         // Right-down
-        else if (ourPosition.getColumn() > tile.getColumn() && ourPosition.getRow() > tile.getRow())
+        else if (ourTile.getColumn() > tile.getColumn() && ourTile.getRow() > tile.getRow())
         {
             newColumn = tile.getColumn() + 1;
             newRow = tile.getRow() + 1;
         }
         // Right-up
-        else if (ourPosition.getColumn() > tile.getColumn() && ourPosition.getRow() < tile.getRow())
+        else if (ourTile.getColumn() > tile.getColumn() && ourTile.getRow() < tile.getRow())
         {
             newColumn = tile.getColumn() + 1;
             newRow = tile.getRow() - 1;
         }
         // Left and Right
-        else if (ourPosition.getRow() == tile.getRow())
+        else if (ourTile.getRow() == tile.getRow())
         {
-            if (ourPosition.getColumn() < tile.getColumn())
+            if (ourTile.getColumn() < tile.getColumn())
             {
                 newColumn = tile.getColumn() - 1;
             }
@@ -78,9 +83,9 @@ public class Queen extends ChessPiece
                 newColumn = tile.getColumn() + 1;
             }
         }
-        else if (ourPosition.getColumn() == tile.getColumn())
+        else
         {
-            if (ourPosition.getRow() < tile.getRow())
+            if (ourTile.getRow() < tile.getRow())
             {
                 newRow = tile.getRow() - 1;
             }

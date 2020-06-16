@@ -16,18 +16,18 @@ public class Pawn extends ChessPiece
     }
 
     @Override
-    public void moveTo(final ChessBoard.Tile tile)
+    public void moveTo(final ChessBoard.Tile newTile)
     {
-        super.moveTo(tile);
+        super.moveTo(newTile);
         if (isFirstMove)
             isFirstMove = false;
 
         // Replace pawn with best lost figure if it reaches the end of the chessboard.
-        if (tile.getRow() == 8 && super.getSide() == Side.BLACK)
+        if (newTile.getRow() == 8 && super.getSide() == Side.BLACK)
         {
             replaceWithBestLostFigureBlack();
         }
-        else if (tile.getRow() == 1 && super.getSide() == Side.WHITE)
+        else if (newTile.getRow() == 1 && super.getSide() == Side.WHITE)
         {
             replaceWithBestLostFigureWhite();
         }
@@ -73,31 +73,36 @@ public class Pawn extends ChessPiece
     }
 
     @Override
-    public boolean canMoveTo(final ChessBoard.Tile newPosition)
+    public boolean canMoveTo(final ChessBoard.Tile newTile)
     {
-        final ChessboardPosition currentPosition = super.getTilePosition();
+        if (ChessGame.getGame().isWhiteMove() && super.getSide() == Side.WHITE && willUncoverKing())
+            return false;
+        else if (!ChessGame.getGame().isWhiteMove() && super.getSide() == Side.BLACK && willUncoverKing())
+            return false;
 
-        if (currentPosition.getRow() == newPosition.getRow() && currentPosition.getColumn() == newPosition.getColumn())
+        final ChessBoard.Tile currentTile = super.getTile();
+
+        if (currentTile.getRow() == newTile.getRow() && currentTile.getColumn() == newTile.getColumn())
             return false;
 
         // Pawns can only move one tile at time or two if it is their first move.
-        int absDistanceY = Math.abs(newPosition.getRow() - currentPosition.getRow());
-        int absDistanceX = Math.abs(newPosition.getColumn() - currentPosition.getColumn());
+        int absDistanceY = Math.abs(newTile.getRow() - currentTile.getRow());
+        int absDistanceX = Math.abs(newTile.getColumn() - currentTile.getColumn());
 
         if (super.getSide() == Side.WHITE)
         {
             //Go upwards
-            if (newPosition.getRow() > currentPosition.getRow())
+            if (newTile.getRow() > currentTile.getRow())
                 return false;
         }
         else
         {
-            if (newPosition.getRow() < currentPosition.getRow())
+            if (newTile.getRow() < currentTile.getRow())
                 return false;
         }
 
         // Validate movement
-        final ChessPiece chessPieceAtNewPosition = ChessGame.getGame().getChessBoard().getFigureAt(newPosition.getRow(), newPosition.getColumn());
+        final ChessPiece chessPieceAtNewPosition = newTile.getChessPiece();
         if (absDistanceY == 1 && absDistanceX == 0) // One tile (normal move)
         {
             return chessPieceAtNewPosition == null;

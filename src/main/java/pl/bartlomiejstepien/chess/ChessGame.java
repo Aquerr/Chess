@@ -24,6 +24,8 @@ public class ChessGame extends Application
     private static ChessGame INSTANCE;
 
     private final ChessBoard chessBoard;
+    private King blackKing;
+    private King whiteKing;
 
     private Stage stage;
     private Scene scene;
@@ -36,8 +38,8 @@ public class ChessGame extends Application
     private Timer timer;
     private int seconds;
 
-    private List<ChessPiece> aliveWhiteFigures = new ArrayList<>();
-    private List<ChessPiece> aliveBlackFigures = new ArrayList<>();
+    private final List<ChessPiece> aliveWhiteFigures = new ArrayList<>();
+    private final List<ChessPiece> aliveBlackFigures = new ArrayList<>();
 
     private boolean isWhiteMove = true;
 
@@ -105,6 +107,11 @@ public class ChessGame extends Application
 
         primaryStage.setTitle("Chess");
         primaryStage.setScene(scene);
+        primaryStage.setOnCloseRequest(windowEvent ->
+        {
+            Platform.exit();
+            System.exit(0);
+        });
         primaryStage.show();
     }
 
@@ -118,8 +125,8 @@ public class ChessGame extends Application
         }
 
         // Kings
-        final King blackKing = new King(Side.BLACK, new ChessboardPosition(1,5));
-        final King whiteKing = new King(Side.WHITE, new ChessboardPosition(8,5));
+        this.blackKing = new King(Side.BLACK, new ChessboardPosition(1,5));
+        this.whiteKing = new King(Side.WHITE, new ChessboardPosition(8,5));
 
         // Queens
         final Queen blackQueen = new Queen(Side.BLACK, new ChessboardPosition(1, 4));
@@ -176,6 +183,16 @@ public class ChessGame extends Application
             else
                 color = Color.NAVAJOWHITE;
         }
+
+        char letter = 'A';
+        for (int row = 1; row <= 8; row++)
+        {
+            final Label label = new Label(String.valueOf(letter));
+            label.setTranslateX(row * 60 - 30);
+            label.setTranslateY(-20);
+            this.chessBoardGroup.getChildren().add(label);
+            letter++;
+        }
     }
 
     public static void main( String[] args )
@@ -201,5 +218,15 @@ public class ChessGame extends Application
     public List<ChessPiece> getAliveBlackFigures()
     {
         return this.aliveBlackFigures;
+    }
+
+    public King getBlackKing()
+    {
+        return blackKing;
+    }
+
+    public King getWhiteKing()
+    {
+        return whiteKing;
     }
 }

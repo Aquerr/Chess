@@ -14,16 +14,21 @@ public class Knight extends ChessPiece
     @Override
     public boolean canMoveTo(ChessBoard.Tile tile)
     {
-        final ChessboardPosition currentPosition = super.getTilePosition();
-
-        if (currentPosition.getRow() == tile.getRow() && currentPosition.getColumn() == tile.getColumn())
+        if (ChessGame.getGame().isWhiteMove() && super.getSide() == Side.WHITE && willUncoverKing())
+            return false;
+        else if (!ChessGame.getGame().isWhiteMove() && super.getSide() == Side.BLACK && willUncoverKing())
             return false;
 
-        int absDistanceY = Math.abs(tile.getRow() - currentPosition.getRow());
-        int absDistanceX = Math.abs(tile.getColumn() - currentPosition.getColumn());
+        final ChessBoard.Tile currentTile = super.getTile();
+
+        if (currentTile.getRow() == tile.getRow() && currentTile.getColumn() == tile.getColumn())
+            return false;
+
+        int absDistanceY = Math.abs(tile.getRow() - currentTile.getRow());
+        int absDistanceX = Math.abs(tile.getColumn() - currentTile.getColumn());
 
         // Validate movement
-        final ChessPiece chessPieceAtNewPosition = ChessGame.getGame().getChessBoard().getFigureAt(tile.getRow(), tile.getColumn());
+        final ChessPiece chessPieceAtNewPosition = tile.getChessPiece();
 
         if (absDistanceY == 2 && absDistanceX == 1)
             return chessPieceAtNewPosition == null || !chessPieceAtNewPosition.getSide().equals(super.getSide());

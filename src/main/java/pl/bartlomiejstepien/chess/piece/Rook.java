@@ -14,16 +14,21 @@ public class Rook extends ChessPiece
     @Override
     public boolean canMoveTo(ChessBoard.Tile tile)
     {
-        final ChessboardPosition currentPosition = super.getTilePosition();
-
-        if (currentPosition.getRow() == tile.getRow() && currentPosition.getColumn() == tile.getColumn())
+        if (ChessGame.getGame().isWhiteMove() && super.getSide() == Side.WHITE && willUncoverKing())
+            return false;
+        else if (!ChessGame.getGame().isWhiteMove() && super.getSide() == Side.BLACK && willUncoverKing())
             return false;
 
-        int absDistanceY = Math.abs(tile.getRow() - currentPosition.getRow());
-        int absDistanceX = Math.abs(tile.getColumn() - currentPosition.getColumn());
+        final ChessBoard.Tile currentTile = super.getTile();
+
+        if (currentTile.getRow() == tile.getRow() && currentTile.getColumn() == tile.getColumn())
+            return false;
+
+        int absDistanceY = Math.abs(tile.getRow() - currentTile.getRow());
+        int absDistanceX = Math.abs(tile.getColumn() - currentTile.getColumn());
 
         // Validate movement
-        final ChessPiece chessPieceAtNewPosition = ChessGame.getGame().getChessBoard().getFigureAt(tile.getRow(), tile.getColumn());
+        final ChessPiece chessPieceAtNewPosition = tile.getChessPiece();
         if (absDistanceX > 0 && absDistanceY > 0)
             return false;
 
@@ -35,36 +40,36 @@ public class Rook extends ChessPiece
 
     private boolean isChessPieceInWay(final ChessBoard.Tile tile)
     {
-        if (tile.getColumn() > super.getTilePosition().getColumn())
+        if (tile.getColumn() > super.getTile().getColumn())
         {
-            for (int column = super.getTilePosition().getColumn() + 1; column < tile.getColumn(); column++)
+            for (int column = super.getTile().getColumn() + 1; column < tile.getColumn(); column++)
             {
-                final ChessPiece chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(super.getTilePosition().getRow(), column);
+                final ChessPiece chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(super.getTile().getRow(), column);
                 if (chessPiece != null)
                     return true;
             }
         }
-        else if (tile.getColumn() < super.getTilePosition().getColumn())
+        else if (tile.getColumn() < super.getTile().getColumn())
         {
-            for (int column = super.getTilePosition().getColumn() - 1; column > tile.getColumn(); column--)
+            for (int column = super.getTile().getColumn() - 1; column > tile.getColumn(); column--)
             {
-                if (ChessGame.getGame().getChessBoard().getFigureAt(super.getTilePosition().getRow(), column) != null)
+                if (ChessGame.getGame().getChessBoard().getFigureAt(super.getTile().getRow(), column) != null)
                     return true;
             }
         }
-        else if (tile.getRow() > super.getTilePosition().getRow())
+        else if (tile.getRow() > super.getTile().getRow())
         {
-            for (int row = super.getTilePosition().getRow() + 1; row < tile.getRow(); row++)
+            for (int row = super.getTile().getRow() + 1; row < tile.getRow(); row++)
             {
-                if (ChessGame.getGame().getChessBoard().getFigureAt(row, super.getTilePosition().getColumn()) != null)
+                if (ChessGame.getGame().getChessBoard().getFigureAt(row, super.getTile().getColumn()) != null)
                     return true;
             }
         }
-        else if (tile.getRow() < super.getTilePosition().getRow())
+        else if (tile.getRow() < super.getTile().getRow())
         {
-            for (int row = super.getTilePosition().getRow() - 1; row > tile.getRow(); row--)
+            for (int row = super.getTile().getRow() - 1; row > tile.getRow(); row--)
             {
-                if (ChessGame.getGame().getChessBoard().getFigureAt(row, super.getTilePosition().getColumn()) != null)
+                if (ChessGame.getGame().getChessBoard().getFigureAt(row, super.getTile().getColumn()) != null)
                     return true;
             }
         }

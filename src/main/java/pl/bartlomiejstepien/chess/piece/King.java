@@ -17,21 +17,21 @@ public class King extends ChessPiece
     @Override
     public boolean canMoveTo(ChessBoard.Tile tile)
     {
-        final ChessboardPosition currentPosition = super.getTilePosition();
+        final ChessBoard.Tile currentTile = super.getTile();
 
-        if (currentPosition.getRow() == tile.getRow() && currentPosition.getColumn() == tile.getColumn())
+        if (currentTile.getRow() == tile.getRow() && currentTile.getColumn() == tile.getColumn())
             return false;
 
         //TODO: Add special king move.
         // King can only move one tile at time.
-        int absDistanceY = Math.abs(tile.getRow() - currentPosition.getRow());
-        int absDistanceX = Math.abs(tile.getColumn() - currentPosition.getColumn());
+        int absDistanceY = Math.abs(tile.getRow() - currentTile.getRow());
+        int absDistanceX = Math.abs(tile.getColumn() - currentTile.getColumn());
 
         boolean canMove = true;
 
         //TODO: Block moving to tiles that can be attacked by enemy chess.
         // Validate movement
-        final ChessPiece chessPieceAtNewPosition = ChessGame.getGame().getChessBoard().getFigureAt(tile.getRow(), tile.getColumn());
+        final ChessPiece chessPieceAtNewPosition = tile.getChessPiece();
         if (absDistanceX > 1 || absDistanceY > 1)
             return false;
 
@@ -59,6 +59,23 @@ public class King extends ChessPiece
         for (final ChessPiece chessPiece : chessPieces)
         {
             if (chessPiece.canMoveTo(tile))
+                return true;
+        }
+        return false;
+    }
+
+    public boolean isThreatened()
+    {
+        List<ChessPiece> chessPieces;
+        if (super.getSide() == Side.BLACK)
+            chessPieces = ChessGame.getGame().getAliveWhiteFigures();
+        else chessPieces = ChessGame.getGame().getAliveBlackFigures();
+
+        final ChessBoard.Tile kingTile = super.getTile();
+
+        for (final ChessPiece chessPiece : chessPieces)
+        {
+            if (chessPiece.canMoveTo(kingTile))
                 return true;
         }
         return false;

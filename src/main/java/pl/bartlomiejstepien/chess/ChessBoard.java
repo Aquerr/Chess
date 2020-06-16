@@ -8,6 +8,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
 import pl.bartlomiejstepien.chess.piece.ChessPiece;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -27,10 +28,7 @@ public class ChessBoard
         final List<Tile> tiles = new LinkedList<>();
         for (final Tile[] row : chessBoardTiles)
         {
-            for (final Tile tile : row)
-            {
-                tiles.add(tile);
-            }
+            tiles.addAll(Arrays.asList(row));
         }
         return tiles;
     }
@@ -60,34 +58,6 @@ public class ChessBoard
         }
     }
 
-//    public boolean isUpOccupied(final Vector2i position)
-//    {
-//        try
-//        {
-//            if (this.chessBoardFigures[position.getY() - 1][position.getX()] != null)
-//                return true;
-//        }
-//        catch (Exception e)
-//        {
-//            return false;
-//        }
-//        return false;
-//    }
-//
-//    public boolean isDownOccupied(final Vector2i position)
-//    {
-//        try
-//        {
-//            if (this.chessBoardFigures[position.getY() + 1][position.getX()] != null)
-//                return true;
-//        }
-//        catch (Exception e)
-//        {
-//            return false;
-//        }
-//        return false;
-//    }
-
     public Optional<Tile> getIntersectingTile(final double x, final double y)
     {
         for (int row = 0; row < this.chessBoardTiles.length; row++)
@@ -102,9 +72,11 @@ public class ChessBoard
         return Optional.empty();
     }
 
-    public void putFigureAtTile(int row, int column, ChessPiece chessPiece)
+    public Tile putFigureAtTile(int row, int column, ChessPiece chessPiece)
     {
         this.chessBoardFigures[row - 1][column - 1] = chessPiece;
+        this.chessBoardTiles[row - 1][column - 1].setFigure(chessPiece);
+        return this.chessBoardTiles[row - 1][column - 1];
     }
 
     public static final class Tile
@@ -113,6 +85,8 @@ public class ChessBoard
         private final int column;
 
         private final Rectangle rectangle;
+
+        private ChessPiece chessPiece;
 
         public Tile(final int row, final int column, final Color color)
         {
@@ -142,6 +116,16 @@ public class ChessBoard
         public Rectangle getRectangle()
         {
             return this.rectangle;
+        }
+
+        public ChessPiece getChessPiece()
+        {
+            return this.chessPiece;
+        }
+
+        public void setFigure(ChessPiece chessPiece)
+        {
+            this.chessPiece = chessPiece;
         }
 
         @Override

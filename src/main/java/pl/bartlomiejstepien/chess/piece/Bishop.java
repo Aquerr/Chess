@@ -14,15 +14,20 @@ public class Bishop extends ChessPiece
     @Override
     public boolean canMoveTo(ChessBoard.Tile tile)
     {
-        final ChessboardPosition currentPosition = super.getTilePosition();
-        if (currentPosition.getRow() == tile.getRow() && currentPosition.getColumn() == tile.getColumn())
+        if (ChessGame.getGame().isWhiteMove() && super.getSide() == Side.WHITE && willUncoverKing())
+            return false;
+        else if (!ChessGame.getGame().isWhiteMove() && super.getSide() == Side.BLACK && willUncoverKing())
             return false;
 
-        int absDistanceY = Math.abs(tile.getRow() - currentPosition.getRow());
-        int absDistanceX = Math.abs(tile.getColumn() - currentPosition.getColumn());
+        final ChessBoard.Tile currentTile = super.getTile();
+        if (currentTile.getRow() == tile.getRow() && currentTile.getColumn() == tile.getColumn())
+            return false;
+
+        int absDistanceY = Math.abs(tile.getRow() - currentTile.getRow());
+        int absDistanceX = Math.abs(tile.getColumn() - currentTile.getColumn());
 
         // Validate movement
-        final ChessPiece chessPieceAtNewPosition = ChessGame.getGame().getChessBoard().getFigureAt(tile.getRow(), tile.getColumn());
+        final ChessPiece chessPieceAtNewPosition = tile.getChessPiece();
         if (absDistanceX != absDistanceY)
             return false;
 
@@ -37,31 +42,31 @@ public class Bishop extends ChessPiece
         if (tile == null)
             return false;
 
-        final ChessboardPosition ourPosition = super.getTilePosition();
+        final ChessBoard.Tile currentTile = super.getTile();
 
         int newColumn = 0;
         int newRow = 0;
 
         // Left-down
-        if (ourPosition.getColumn() < tile.getColumn() && ourPosition.getRow() > tile.getRow())
+        if (currentTile.getColumn() < tile.getColumn() && currentTile.getRow() > tile.getRow())
         {
             newColumn = tile.getColumn() - 1;
             newRow = tile.getRow() + 1;
         }
         // Left-up
-        else if (ourPosition.getColumn() < tile.getColumn() && ourPosition.getRow() < tile.getRow())
+        else if (currentTile.getColumn() < tile.getColumn() && currentTile.getRow() < tile.getRow())
         {
             newColumn = tile.getColumn() - 1;
             newRow = tile.getRow() - 1;
         }
         // Right-down
-        else if (ourPosition.getColumn() > tile.getColumn() && ourPosition.getRow() > tile.getRow())
+        else if (currentTile.getColumn() > tile.getColumn() && currentTile.getRow() > tile.getRow())
         {
             newColumn = tile.getColumn() + 1;
             newRow = tile.getRow() + 1;
         }
         // Right-up
-        else if (ourPosition.getColumn() > tile.getColumn() && ourPosition.getRow() < tile.getRow())
+        else if (currentTile.getColumn() > tile.getColumn() && currentTile.getRow() < tile.getRow())
         {
             newColumn = tile.getColumn() + 1;
             newRow = tile.getRow() - 1;
