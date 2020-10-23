@@ -107,7 +107,7 @@ public class Pawn extends ChessPiece
         {
             return chessPieceAtNewPosition == null;
         }
-        else if (absDistanceY == 2 && isFirstMove && absDistanceX == 0) // Two tiles (first move)
+        else if (isFirstMove && absDistanceY == 2 && absDistanceX == 0) // Two tiles (first move)
         {
             return chessPieceAtNewPosition == null;
         }
