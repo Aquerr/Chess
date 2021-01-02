@@ -6,6 +6,8 @@ import pl.bartlomiejstepien.chess.ChessboardPosition;
 
 public class Rook extends ChessPiece
 {
+    private boolean hasMoved = false;
+
     public Rook(Side side, ChessboardPosition position)
     {
         super(side, position, side == Side.BLACK ? "icons/icons8-rook-50.png" : "icons/icons8-rook-50-white.png");
@@ -14,9 +16,9 @@ public class Rook extends ChessPiece
     @Override
     public boolean canMoveTo(ChessBoard.Tile tile)
     {
-        if (ChessGame.getGame().isWhiteMove() && super.getSide() == Side.WHITE && willUncoverKing())
+        if (ChessGame.getGame().isWhiteMove() && super.getSide() == Side.WHITE && willUncoverKing(tile))
             return false;
-        else if (!ChessGame.getGame().isWhiteMove() && super.getSide() == Side.BLACK && willUncoverKing())
+        else if (!ChessGame.getGame().isWhiteMove() && super.getSide() == Side.BLACK && willUncoverKing(tile))
             return false;
 
         final ChessBoard.Tile currentTile = super.getTile();

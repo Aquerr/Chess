@@ -75,9 +75,9 @@ public class Pawn extends ChessPiece
     @Override
     public boolean canMoveTo(final ChessBoard.Tile newTile)
     {
-        if (ChessGame.getGame().isWhiteMove() && super.getSide() == Side.WHITE && willUncoverKing())
+        if (ChessGame.getGame().isWhiteMove() && super.getSide() == Side.WHITE && willUncoverKing(newTile))
             return false;
-        else if (!ChessGame.getGame().isWhiteMove() && super.getSide() == Side.BLACK && willUncoverKing())
+        else if (!ChessGame.getGame().isWhiteMove() && super.getSide() == Side.BLACK && willUncoverKing(newTile))
             return false;
 
         final ChessBoard.Tile currentTile = super.getTile();
@@ -107,7 +107,7 @@ public class Pawn extends ChessPiece
         {
             return chessPieceAtNewPosition == null;
         }
-        else if (absDistanceY == 2 && isFirstMove && absDistanceX == 0) // Two tiles (first move)
+        else if (isFirstMove && absDistanceY == 2 && absDistanceX == 0) // Two tiles (first move)
         {
             return chessPieceAtNewPosition == null;
         }

@@ -10,6 +10,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import pl.bartlomiejstepien.chess.localization.Localization;
 import pl.bartlomiejstepien.chess.piece.*;
 
 import java.time.LocalTime;
@@ -59,10 +60,10 @@ public class ChessGame extends Application
         return this.isWhiteMove;
     }
 
-    public void setWhiteMove(boolean whiteMove)
+    public void switchSide()
     {
-        isWhiteMove = whiteMove;
-        Platform.runLater(() -> labelCurrentMove.setText("Current move: " + (this.isWhiteMove ? "white" : "black")));
+        isWhiteMove = !isWhiteMove;
+        Platform.runLater(() -> labelCurrentMove.setText(Localization.translate("currentmove") + ": " + (this.isWhiteMove ? Localization.translate("whiteside") : Localization.translate("blackside"))));
     }
 
     @Override
@@ -72,13 +73,13 @@ public class ChessGame extends Application
         this.root = new Group();
         this.scene = new Scene(root, 600, 600);
 
-        this.labelCurrentMove = new Label("Current move: " + (this.isWhiteMove ? "white" : "black"));
+        this.labelCurrentMove = new Label(Localization.translate("currentmove") + ": " + (this.isWhiteMove ? Localization.translate("whiteside") : Localization.translate("blackside")));
         this.labelCurrentMove.setFont(Font.font("Arial", FontWeight.MEDIUM, FontPosture.REGULAR, 20));
         this.labelCurrentMove.setTranslateX(60);
         this.labelCurrentMove.setTranslateY(15);
         this.root.getChildren().add(this.labelCurrentMove);
 
-        this.labelTimer = new Label("Time: 00:00:00");
+        this.labelTimer = new Label(Localization.translate("time") + " 00:00:00");
         this.root.getChildren().add(this.labelTimer);
         this.labelTimer.setTranslateX(390);
         this.labelTimer.setTranslateY(15);
@@ -91,7 +92,7 @@ public class ChessGame extends Application
             public void run()
             {
                 seconds++;
-                Platform.runLater(() -> labelTimer.setText("Time: " + LocalTime.MIN.plusSeconds(seconds).format(DateTimeFormatter.ISO_LOCAL_TIME)));
+                Platform.runLater(() -> labelTimer.setText(Localization.translate("time") + ": " + LocalTime.MIN.plusSeconds(seconds).format(DateTimeFormatter.ISO_LOCAL_TIME)));
             }
         };
         this.timer.scheduleAtFixedRate(timerTask, 0, 1000L);
@@ -105,7 +106,7 @@ public class ChessGame extends Application
         drawChessboard();
         setupChessFigures();
 
-        primaryStage.setTitle("Chess");
+        primaryStage.setTitle(Localization.translate("chess"));
         primaryStage.setScene(scene);
         primaryStage.setOnCloseRequest(windowEvent ->
         {
