@@ -128,6 +128,11 @@ public class ChessBoard
             this.chessPiece = chessPiece;
         }
 
+        public ChessboardPosition getChessboardPosition()
+        {
+            return new ChessboardPosition(this.row, this.column);
+        }
+
         @Override
         public String toString()
         {

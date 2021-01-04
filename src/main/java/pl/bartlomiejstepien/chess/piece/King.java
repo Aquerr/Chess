@@ -4,6 +4,7 @@ import pl.bartlomiejstepien.chess.ChessBoard;
 import pl.bartlomiejstepien.chess.ChessGame;
 import pl.bartlomiejstepien.chess.ChessboardPosition;
 
+import java.util.LinkedList;
 import java.util.List;
 
 public class King extends ChessPiece
@@ -29,13 +30,16 @@ public class King extends ChessPiece
         int absDistanceX = Math.abs(tile.getColumn() - currentTile.getColumn());
 
         boolean canMove = true;
-
-        if (absDistanceX > 1 && absDistanceY > 1)
-            return false;
+        boolean canDoCastling = false;
 
         //TODO: Block moving to tiles that can be attacked by enemy chess.
+
+        // Check if king can do castling
+        if (absDistanceY == 0 && (absDistanceX == 2 || absDistanceX == 3) && canDoCastling(tile, absDistanceX))
+            canDoCastling = true;
+
         // Validate movement
-        if ((absDistanceX > 1 || absDistanceY > 1) && !canDoCastling(tile, absDistanceX))
+        if (!canDoCastling && (absDistanceX > 1 || absDistanceY > 1))
             return false;
 
         final ChessPiece chessPieceAtNewPosition = tile.getChessPiece();
@@ -44,13 +48,18 @@ public class King extends ChessPiece
             canMove = false;
         }
 
-        if (!canMove)
+        if (!canMove && !canDoCastling)
             return false;
 
         // Validate if the king will be threatened at new tile
+        ChessGame.getGame().getChessBoard().putFigureAtTile(super.getTile().getRow(), super.getTile().getColumn(), null);
+        ChessGame.getGame().getChessBoard().putFigureAtTile(tile.getRow(), tile.getColumn(), this);
+
         if (willBeThreatenedAtTile(tile))
             canMove = false;
 
+        ChessGame.getGame().getChessBoard().putFigureAtTile(tile.getRow(), tile.getColumn(), chessPieceAtNewPosition);
+        ChessGame.getGame().getChessBoard().putFigureAtTile(super.getTile().getRow(), super.getTile().getColumn(), this);
         return canMove;
     }
 
@@ -71,23 +80,6 @@ public class King extends ChessPiece
         super.moveTo(newTile);
     }
 
-    public boolean isThreatened()
-    {
-        List<ChessPiece> chessPieces;
-        if (super.getSide() == Side.BLACK)
-            chessPieces = ChessGame.getGame().getAliveWhiteFigures();
-        else chessPieces = ChessGame.getGame().getAliveBlackFigures();
-
-        final ChessBoard.Tile kingTile = super.getTile();
-
-        for (final ChessPiece chessPiece : chessPieces)
-        {
-            if (chessPiece.canMoveTo(kingTile))
-                return true;
-        }
-        return false;
-    }
-
     public boolean willBeThreatenedAtTile(final ChessBoard.Tile tile)
     {
         List<ChessPiece> chessPieces;
@@ -97,13 +89,18 @@ public class King extends ChessPiece
         for (final ChessPiece chessPiece : chessPieces)
         {
             if (chessPiece.canMoveTo(tile))
+            {
+                System.out.println(super.getSide().name() + " King will be threatened at tile: " + tile.toString() + " by " + chessPiece.getClass().getName());
                 return true;
+            }
         }
         return false;
     }
 
     private boolean canDoCastling(ChessBoard.Tile newTile, int absDistanceX)
     {
+        //TODO: Check if enemy piece can attack any of the passed tiles in castling
+
         if (hasMoved)
             return false;
 

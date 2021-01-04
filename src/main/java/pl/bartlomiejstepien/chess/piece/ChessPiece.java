@@ -12,8 +12,11 @@ import pl.bartlomiejstepien.chess.ChessGame;
 import pl.bartlomiejstepien.chess.ChessboardPosition;
 
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.FutureTask;
 
 public abstract class ChessPiece
 {
@@ -52,9 +55,7 @@ public abstract class ChessPiece
         this.lastX = this.rectangle.getX();
 
         this.rectangle.setOnMousePressed(mouseClickEvent -> {
-            if (this.getSide() == Side.BLACK && ChessGame.getGame().isWhiteMove())
-                return;
-            else if (this.getSide() == Side.WHITE && !ChessGame.getGame().isWhiteMove())
+            if (!this.getSide().equals(ChessGame.getGame().getCurrentMoveSide()))
                 return;
 
             // Highlight possible movements
@@ -64,9 +65,7 @@ public abstract class ChessPiece
         this.rectangle.setOnMouseDragged(mouseEvent ->
         {
             //TODO: Improve this... maybe by locking all tiles?
-            if (this.getSide() == Side.BLACK && ChessGame.getGame().isWhiteMove())
-                return;
-            else if (this.getSide() == Side.WHITE && !ChessGame.getGame().isWhiteMove())
+            if (!this.getSide().equals(ChessGame.getGame().getCurrentMoveSide()))
                 return;
 
             double mouseX = mouseEvent.getX();
@@ -104,6 +103,7 @@ public abstract class ChessPiece
                 return;
             }
 
+            System.out.println("Moving chess piece to tile " + tile.getChessboardPosition());
             moveTo(newTile);
         });
 
@@ -155,7 +155,7 @@ public abstract class ChessPiece
      */
     protected void moveTo(final ChessBoard.Tile newTile)
     {
-        if (this instanceof King && ((King) this).isThreatened())
+        if (this instanceof King && ((King) this).willBeThreatenedAtTile(this.tile))
         {
             this.getTile().getRectangle().setEffect(null);
         }
@@ -164,15 +164,7 @@ public abstract class ChessPiece
         final ChessBoard chessBoard = chessGame.getChessBoard();
         final ChessPiece figureAtTile = newTile.getChessPiece();
 
-        if (figureAtTile != null)
-        {
-            // Destroy enemy figure...
-            if (figureAtTile.getSide() == Side.BLACK)
-                chessGame.getAliveBlackFigures().remove(figureAtTile);
-            else
-                chessGame.getAliveWhiteFigures().remove(figureAtTile);
-            chessGame.getChessBoardView().getChildren().remove(figureAtTile.getRectangle());
-        }
+        chessGame.destroyPiece(figureAtTile);
 
         chessBoard.putFigureAtTile(this.tile.getRow(), this.tile.getColumn(), null);
         chessBoard.putFigureAtTile(newTile.getRow(), newTile.getColumn(), this);
@@ -185,10 +177,10 @@ public abstract class ChessPiece
         chessGame.switchSide();
 
         // Highlight king's tile if it is threatened
-        final List<King> kings = Arrays.asList(ChessGame.getGame().getWhiteKing(), ChessGame.getGame().getBlackKing());
+        final List<King> kings = Arrays.asList(ChessGame.getGame().getKing(Side.WHITE), ChessGame.getGame().getKing(Side.BLACK));
         for (final King king : kings)
         {
-            if (king.isThreatened())
+            if (king.willBeThreatenedAtTile(king.getTile()))
             {
                 final ChessBoard.Tile kingTile = king.getTile();
                 final Rectangle kingTileRectangle = kingTile.getRectangle();
@@ -207,42 +199,29 @@ public abstract class ChessPiece
 
     protected boolean willUncoverKing(final ChessBoard.Tile newTile)
     {
-        // Get King
-        ChessBoard.Tile kingTile = null;
-
-        if (this.getSide() == Side.BLACK)
-            kingTile = ChessGame.getGame().getBlackKing().getTile();
-        else kingTile = ChessGame.getGame().getWhiteKing().getTile();
+        ChessBoard chessBoard = ChessGame.getGame().getChessBoard();
 
         // Loop over all enemy chess pieces and check if any of them will be able to threat the king
-
-        boolean willKingBeThreatened = false;
+        boolean willKingBeThreatened;
 
         //Temporary, so that we can use canMoveTo in other chess pieces
-        ChessGame.getGame().getChessBoard().putFigureAtTile(this.tile.getRow(), this.tile.getColumn(), null);
-        ChessPiece oldPieceAtNewTile = ChessGame.getGame().getChessBoard().getFigureAt(newTile.getRow(), newTile.getColumn());
-        if (oldPieceAtNewTile != null)
-        {
-            if (oldPieceAtNewTile.getSide() == Side.BLACK)
-                ChessGame.getGame().getAliveBlackFigures().remove(oldPieceAtNewTile);
-            else
-                ChessGame.getGame().getAliveWhiteFigures().remove(oldPieceAtNewTile);
-            ChessGame.getGame().getChessBoardView().getChildren().remove(oldPieceAtNewTile.getRectangle());
-        }
+        chessBoard.putFigureAtTile(this.tile.getRow(), this.tile.getColumn(), null);
+        ChessPiece oldPieceAtNewTile = chessBoard.getFigureAt(newTile.getRow(), newTile.getColumn());
+        chessBoard.putFigureAtTile(newTile.getRow(), newTile.getColumn(), this);
 
-        // Check if other tiles will be able to attack the king
-        List<ChessPiece> enemyPieces;
-        if (this.getSide() == Side.BLACK)
-            enemyPieces = ChessGame.getGame().getAliveWhiteFigures();
-        else enemyPieces = ChessGame.getGame().getAliveBlackFigures();
-        for (final ChessPiece chessPiece : enemyPieces)
-        {
-            if (chessPiece.canMoveTo(kingTile))
-            {
-                willKingBeThreatened = true;
-                break;
-            }
-        }
+        ChessGame.getGame().destroyPiece(oldPieceAtNewTile);
+//        if (oldPieceAtNewTile != null)
+//        {
+//             Destroy enemy figure...
+//            if (oldPieceAtNewTile.getSide() == Side.BLACK)
+//                ChessGame.getGame().getAliveBlackFigures().remove(oldPieceAtNewTile);
+//            else
+//                ChessGame.getGame().getAliveWhiteFigures().remove(oldPieceAtNewTile);
+//            ChessGame.getGame().getChessBoardView().getChildren().remove(oldPieceAtNewTile.getRectangle());
+//        }
+
+        final King king = ChessGame.getGame().getKing(getSide());
+        willKingBeThreatened = king.willBeThreatenedAtTile(king.getTile());
 
         if (oldPieceAtNewTile != null)
         {
@@ -253,24 +232,26 @@ public abstract class ChessPiece
             ChessGame.getGame().getChessBoardView().getChildren().add(oldPieceAtNewTile.getRectangle());
         }
 
-        ChessGame.getGame().getChessBoard().putFigureAtTile(this.tile.getRow(), this.tile.getColumn(), this);
+        chessBoard.putFigureAtTile(newTile.getRow(), newTile.getColumn(), oldPieceAtNewTile);
+        chessBoard.putFigureAtTile(this.tile.getRow(), this.tile.getColumn(), this);
         return willKingBeThreatened;
     }
 
     public void highlightPossibleMovements()
     {
-        for (final ChessBoard.Tile tile :  ChessGame.getGame().getChessBoard().getChessBoardTilesAsList())
+        System.out.println("Highlighting possible movements");
+        for (final ChessBoard.Tile tile : ChessGame.getGame().getChessBoard().getChessBoardTilesAsList())
         {
-            if (canMoveTo(tile))
+            if (CompletableFuture.completedFuture(canMoveTo(tile)).join())
                 tile.getRectangle().setEffect(new ColorInput(tile.getRectangle().getX() + 5, tile.getRectangle().getY() + 5, tile.getRectangle().getWidth() - 10, tile.getRectangle().getHeight() - 10, Color.LIGHTSTEELBLUE));
         }
     }
     public void unHighlightPossibleMovements()
     {
-        for (final ChessBoard.Tile tile :  ChessGame.getGame().getChessBoard().getChessBoardTilesAsList())
+        System.out.println("Hiding possible movements");
+        for (final ChessBoard.Tile tile : ChessGame.getGame().getChessBoard().getChessBoardTilesAsList())
         {
-            if (canMoveTo(tile))
-                tile.getRectangle().setEffect(null);
+            tile.getRectangle().setEffect(null);
         }
     }
 }

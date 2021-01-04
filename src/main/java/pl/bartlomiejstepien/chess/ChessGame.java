@@ -2,14 +2,26 @@ package pl.bartlomiejstepien.chess;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
+import javafx.geometry.Orientation;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
+import javafx.scene.paint.Paint;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.StrokeType;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
+import javafx.stage.Popup;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import pl.bartlomiejstepien.chess.localization.Localization;
 import pl.bartlomiejstepien.chess.piece.*;
 
@@ -19,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.function.Function;
 
 public class ChessGame extends Application
 {
@@ -42,7 +55,7 @@ public class ChessGame extends Application
     private final List<ChessPiece> aliveWhiteFigures = new ArrayList<>();
     private final List<ChessPiece> aliveBlackFigures = new ArrayList<>();
 
-    private boolean isWhiteMove = true;
+    private Side currentMoveSide = Side.WHITE;
 
     public ChessGame()
     {
@@ -55,15 +68,15 @@ public class ChessGame extends Application
         return INSTANCE;
     }
 
-    public boolean isWhiteMove()
+    public Side getCurrentMoveSide()
     {
-        return this.isWhiteMove;
+        return this.currentMoveSide;
     }
 
     public void switchSide()
     {
-        isWhiteMove = !isWhiteMove;
-        Platform.runLater(() -> labelCurrentMove.setText(Localization.translate("currentmove") + ": " + (this.isWhiteMove ? Localization.translate("whiteside") : Localization.translate("blackside"))));
+        this.currentMoveSide = this.currentMoveSide == Side.WHITE ? Side.BLACK : Side.WHITE;
+        Platform.runLater(() -> labelCurrentMove.setText(Localization.translate("currentmove") + ": " + (this.currentMoveSide == Side.WHITE ? Localization.translate("whiteside") : Localization.translate("blackside"))));
     }
 
     @Override
@@ -73,7 +86,7 @@ public class ChessGame extends Application
         this.root = new Group();
         this.scene = new Scene(root, 600, 600);
 
-        this.labelCurrentMove = new Label(Localization.translate("currentmove") + ": " + (this.isWhiteMove ? Localization.translate("whiteside") : Localization.translate("blackside")));
+        this.labelCurrentMove = new Label(Localization.translate("currentmove") + ": " + (this.currentMoveSide == Side.WHITE ? Localization.translate("whiteside") : Localization.translate("blackside")));
         this.labelCurrentMove.setFont(Font.font("Arial", FontWeight.MEDIUM, FontPosture.REGULAR, 20));
         this.labelCurrentMove.setTranslateX(60);
         this.labelCurrentMove.setTranslateY(15);
@@ -165,6 +178,7 @@ public class ChessGame extends Application
 
     private void drawChessboard()
     {
+        Function<Color, Color> colorChanger = (color) -> color == Color.NAVAJOWHITE ? Color.SADDLEBROWN : Color.NAVAJOWHITE;
         Color color = Color.NAVAJOWHITE;
         for (int row = 0; row < 8; row++)
         {
@@ -174,15 +188,9 @@ public class ChessGame extends Application
                 this.chessBoardGroup.getChildren().add(tile.getRectangle());
                 this.chessBoard.getChessBoardTiles()[row][column] = tile;
 
-                if (color == Color.NAVAJOWHITE)
-                    color = Color.SADDLEBROWN;
-                else
-                    color = Color.NAVAJOWHITE;
+                color = colorChanger.apply(color);
             }
-            if (color == Color.NAVAJOWHITE)
-                color = Color.SADDLEBROWN;
-            else
-                color = Color.NAVAJOWHITE;
+            color = colorChanger.apply(color);
         }
 
         char letter = 'A';
@@ -221,13 +229,106 @@ public class ChessGame extends Application
         return this.aliveBlackFigures;
     }
 
-    public King getBlackKing()
+    public void destroyPiece(final ChessPiece chessPiece)
     {
-        return blackKing;
+        if (chessPiece != null)
+        {
+            if (chessPiece.getSide() == Side.BLACK)
+                getAliveBlackFigures().remove(chessPiece);
+            else
+                getAliveWhiteFigures().remove(chessPiece);
+            getChessBoardView().getChildren().remove(chessPiece.getRectangle());
+        }
     }
 
-    public King getWhiteKing()
+    public King getKing(Side side)
     {
-        return whiteKing;
+        return side == Side.BLACK ? this.blackKing : this.whiteKing;
+    }
+
+    public void showPawnReplacementWindow(final ChessBoard.Tile tile)
+    {
+        Popup popup = new Popup();
+
+        VBox vBox = new VBox();
+        vBox.setStyle("-fx-border-width: 1px");
+        vBox.setStyle("-fx-border-color: black");
+        vBox.setBackground(new Background(new BackgroundFill(Color.NAVAJOWHITE, null, null)));
+
+        TilePane group = new TilePane(Orientation.HORIZONTAL, 0, 0.5);
+
+        Label label = new Label("Select chess piece:");
+        label.setFont(Font.font("Arial", FontWeight.MEDIUM, FontPosture.REGULAR, 20));
+        vBox.getChildren().add(label);
+        vBox.getChildren().add(group);
+
+        final Rectangle queen = new Rectangle(50, 50);
+        final Rectangle rook = new Rectangle(50, 50);
+        final Rectangle bishop = new Rectangle(50, 50);
+        final Rectangle knight = new Rectangle(50, 50);
+
+        if (this.currentMoveSide == Side.BLACK)
+        {
+            queen.setFill(new ImagePattern(new Image("icons/icons8-queen-50.png")));
+            rook.setFill(new ImagePattern(new Image("icons/icons8-rook-50.png")));
+            bishop.setFill(new ImagePattern(new Image("icons/icons8-bishop-50.png")));
+            knight.setFill(new ImagePattern(new Image("icons/icons8-knight-50.png")));
+        }
+        else
+        {
+            queen.setFill(new ImagePattern(new Image("icons/icons8-queen-50-white.png")));
+            rook.setFill(new ImagePattern(new Image("icons/icons8-rook-50-white.png")));
+            bishop.setFill(new ImagePattern(new Image("icons/icons8-bishop-50-white.png")));
+            knight.setFill(new ImagePattern(new Image("icons/icons8-knight-50-white.png")));
+        }
+
+        queen.setStrokeType(StrokeType.CENTERED);
+        rook.setStrokeType(StrokeType.CENTERED);
+        bishop.setStrokeType(StrokeType.CENTERED);
+        knight.setStrokeType(StrokeType.CENTERED);
+
+        queen.addEventHandler(MouseEvent.MOUSE_ENTERED, new ChessBoard.HighlightTileEventHandler(queen, true));
+        queen.addEventHandler(MouseEvent.MOUSE_EXITED, new ChessBoard.HighlightTileEventHandler(queen, false));
+        rook.addEventHandler(MouseEvent.MOUSE_ENTERED, new ChessBoard.HighlightTileEventHandler(rook, true));
+        rook.addEventHandler(MouseEvent.MOUSE_EXITED, new ChessBoard.HighlightTileEventHandler(rook, false));
+        bishop.addEventHandler(MouseEvent.MOUSE_ENTERED, new ChessBoard.HighlightTileEventHandler(bishop, true));
+        bishop.addEventHandler(MouseEvent.MOUSE_EXITED, new ChessBoard.HighlightTileEventHandler(bishop, false));
+        knight.addEventHandler(MouseEvent.MOUSE_ENTERED, new ChessBoard.HighlightTileEventHandler(knight, true));
+        knight.addEventHandler(MouseEvent.MOUSE_EXITED, new ChessBoard.HighlightTileEventHandler(knight, false));
+
+        queen.setOnMousePressed(mouseEvent -> {
+            System.out.println(currentMoveSide.name() + " converted pawn to: Queen");
+//            destroyPiece(tile.getChessPiece());
+            new Queen(this.currentMoveSide, new ChessboardPosition(tile.getRow(), tile.getColumn()));
+            popup.hide();
+        });
+        rook.setOnMousePressed(mouseEvent -> {
+            System.out.println(currentMoveSide.name() + " converted pawn to: Rook");
+//            destroyPiece(tile.getChessPiece());
+            new Rook(this.currentMoveSide, new ChessboardPosition(tile.getRow(), tile.getColumn()));
+            popup.hide();
+        });
+        bishop.setOnMousePressed(mouseEvent -> {
+            System.out.println(currentMoveSide.name() + " converted pawn to: Bishop");
+//            destroyPiece(tile.getChessPiece());
+            new Bishop(this.currentMoveSide, new ChessboardPosition(tile.getRow(), tile.getColumn()));
+            popup.hide();
+        });
+        knight.setOnMousePressed(mouseEvent -> {
+            System.out.println(currentMoveSide.name() + " converted pawn to: Knight");
+//            destroyPiece(tile.getChessPiece());
+            new Knight(this.currentMoveSide, new ChessboardPosition(tile.getRow(), tile.getColumn()));
+            popup.hide();
+        });
+
+        final ObservableList<Node> groupNodes = group.getChildren();
+        groupNodes.add(queen);
+        groupNodes.add(rook);
+        groupNodes.add(bishop);
+        groupNodes.add(knight);
+
+        popup.getContent().add(vBox);
+
+        popup.show(this.stage);
     }
 }

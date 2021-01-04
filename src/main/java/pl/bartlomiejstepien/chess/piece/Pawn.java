@@ -1,10 +1,9 @@
 package pl.bartlomiejstepien.chess.piece;
 
+import javafx.application.Platform;
 import pl.bartlomiejstepien.chess.ChessBoard;
 import pl.bartlomiejstepien.chess.ChessGame;
 import pl.bartlomiejstepien.chess.ChessboardPosition;
-
-import java.util.List;
 
 public class Pawn extends ChessPiece
 {
@@ -18,66 +17,29 @@ public class Pawn extends ChessPiece
     @Override
     public void moveTo(final ChessBoard.Tile newTile)
     {
-        super.moveTo(newTile);
         if (isFirstMove)
             isFirstMove = false;
 
-        // Replace pawn with best lost figure if it reaches the end of the chessboard.
         if (newTile.getRow() == 8 && super.getSide() == Side.BLACK)
         {
-            replaceWithBestLostFigureBlack();
+            replaceWithChosenChessPiece(newTile);
         }
         else if (newTile.getRow() == 1 && super.getSide() == Side.WHITE)
         {
-            replaceWithBestLostFigureWhite();
+            replaceWithChosenChessPiece(newTile);
         }
+        super.moveTo(newTile);
     }
 
-    private void replaceWithBestLostFigureWhite()
+    private void replaceWithChosenChessPiece(final ChessBoard.Tile newTile)
     {
-        final List<ChessPiece> figures = ChessGame.getGame().getAliveWhiteFigures();
-        replaceWithBestLostFigure(figures);
-    }
-
-    private void replaceWithBestLostFigureBlack()
-    {
-        final List<ChessPiece> figures = ChessGame.getGame().getAliveBlackFigures();
-        replaceWithBestLostFigure(figures);
-    }
-
-    private void replaceWithBestLostFigure(final List<ChessPiece> aliveFigures)
-    {
-        boolean containsQueen = false;
-        boolean containsBishop = false;
-        boolean containsRook = false;
-        boolean containsKnight = false;
-
-//        ChessFigure chessFigure = aliveFigures.get(0);
-//            for (int i = 1; i < figures.size(); i++)
-//            {
-//                if (chessFigure instanceof Queen)
-//                    containsQueen = true;
-//                else if (chessFigure instanceof Rook)
-//                    containsRook = true;
-//                else if (chessFigure instanceof Knight)
-//                    containsKnight = true;
-//                else if (chessFigure instanceof Bishop)
-//                    containsBishop = true;
-//            }
-
-//            if (!containsQueen)
-//            {
-//                ChessGame.getGame().getChessBoard().putFigureAtTile(super.getTilePosition().getRow(), super.getTilePosition().getColumn(), new Quuen());
-//            }
-        System.out.println("Pawn should be replaced with best lost figure but code for it is not yet implemented.");
+        Platform.runLater(() -> ChessGame.getGame().showPawnReplacementWindow(newTile));
     }
 
     @Override
     public boolean canMoveTo(final ChessBoard.Tile newTile)
     {
-        if (ChessGame.getGame().isWhiteMove() && super.getSide() == Side.WHITE && willUncoverKing(newTile))
-            return false;
-        else if (!ChessGame.getGame().isWhiteMove() && super.getSide() == Side.BLACK && willUncoverKing(newTile))
+        if (ChessGame.getGame().getCurrentMoveSide().equals(super.getSide()) && willUncoverKing(newTile))
             return false;
 
         final ChessBoard.Tile currentTile = super.getTile();
@@ -105,9 +67,10 @@ public class Pawn extends ChessPiece
         final ChessPiece chessPieceAtNewPosition = newTile.getChessPiece();
         if (absDistanceY == 1 && absDistanceX == 0) // One tile (normal move)
         {
+            System.out.println("Checking posiiton in front of Pawn row=" + newTile.getRow() + " column=" + newTile.getColumn() + ". ChessPiece not exists = " + (chessPieceAtNewPosition == null));
             return chessPieceAtNewPosition == null;
         }
-        else if (isFirstMove && absDistanceY == 2 && absDistanceX == 0) // Two tiles (first move)
+        else if (canMoveTwoTiles(newTile, absDistanceX, absDistanceY))// Two tiles (first move)
         {
             return chessPieceAtNewPosition == null;
         }
@@ -116,5 +79,30 @@ public class Pawn extends ChessPiece
             return chessPieceAtNewPosition != null && !chessPieceAtNewPosition.getSide().equals(this.getSide());
         }
         else return false;
+    }
+
+    private boolean canMoveTwoTiles(final ChessBoard.Tile newTile, int absDistanceX, int absDistanceY)
+    {
+        if (!isFirstMove || (absDistanceY != 2 || absDistanceX != 0))
+            return false;
+
+        if (super.getSide() == Side.WHITE)
+        {
+            if (newTile.getRow() < super.getTile().getRow())
+            {
+                final ChessPiece chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(super.getTile().getRow() - 1, super.getTile().getColumn());
+                return chessPiece == null;
+            }
+        }
+        else
+        {
+            if (newTile.getRow() > super.getTile().getRow())
+            {
+                final ChessPiece chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(super.getTile().getRow() + 1, super.getTile().getColumn());
+                return chessPiece == null;
+            }
+        }
+
+        return false;
     }
 }

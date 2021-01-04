@@ -51,9 +51,9 @@ public class ChessboardPosition
     @Override
     public String toString()
     {
-        return "Vector2i{" +
-                "x=" + row +
-                ", y=" + column +
+        return "ChessboardPosition{" +
+                "row=" + row +
+                ", column=" + column +
                 '}';
     }
 
