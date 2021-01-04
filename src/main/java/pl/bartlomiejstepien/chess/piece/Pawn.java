@@ -28,12 +28,13 @@ public class Pawn extends ChessPiece
         {
             replaceWithChosenChessPiece(newTile);
         }
+
         super.moveTo(newTile);
     }
 
     private void replaceWithChosenChessPiece(final ChessBoard.Tile newTile)
     {
-        Platform.runLater(() -> ChessGame.getGame().showPawnReplacementWindow(newTile));
+        Platform.runLater(() -> ChessGame.getGame().showPawnReplacementWindow(this.getSide(), newTile));
     }
 
     @Override

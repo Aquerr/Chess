@@ -165,15 +165,15 @@ public class ChessGame extends Application
         final Bishop whiteBishop2 = new Bishop(Side.WHITE, new ChessboardPosition(8, 6));
 
         // Add figure rectangles/boxes to view
-        for (final ChessPiece chessPiece : this.aliveWhiteFigures)
-        {
-            this.chessBoardGroup.getChildren().add(chessPiece.getRectangle());
-        }
-
-        for (final ChessPiece chessPiece : this.aliveBlackFigures)
-        {
-            this.chessBoardGroup.getChildren().add(chessPiece.getRectangle());
-        }
+//        for (final ChessPiece chessPiece : this.aliveWhiteFigures)
+//        {
+//            this.chessBoardGroup.getChildren().add(chessPiece.getRectangle());
+//        }
+//
+//        for (final ChessPiece chessPiece : this.aliveBlackFigures)
+//        {
+//            this.chessBoardGroup.getChildren().add(chessPiece.getRectangle());
+//        }
     }
 
     private void drawChessboard()
@@ -246,7 +246,7 @@ public class ChessGame extends Application
         return side == Side.BLACK ? this.blackKing : this.whiteKing;
     }
 
-    public void showPawnReplacementWindow(final ChessBoard.Tile tile)
+    public void showPawnReplacementWindow(Side side, final ChessBoard.Tile tile)
     {
         Popup popup = new Popup();
 
@@ -267,7 +267,7 @@ public class ChessGame extends Application
         final Rectangle bishop = new Rectangle(50, 50);
         final Rectangle knight = new Rectangle(50, 50);
 
-        if (this.currentMoveSide == Side.BLACK)
+        if (side == Side.BLACK)
         {
             queen.setFill(new ImagePattern(new Image("icons/icons8-queen-50.png")));
             rook.setFill(new ImagePattern(new Image("icons/icons8-rook-50.png")));
@@ -297,27 +297,27 @@ public class ChessGame extends Application
         knight.addEventHandler(MouseEvent.MOUSE_EXITED, new ChessBoard.HighlightTileEventHandler(knight, false));
 
         queen.setOnMousePressed(mouseEvent -> {
-            System.out.println(currentMoveSide.name() + " converted pawn to: Queen");
-//            destroyPiece(tile.getChessPiece());
-            new Queen(this.currentMoveSide, new ChessboardPosition(tile.getRow(), tile.getColumn()));
+            System.out.println(side.name() + " converted pawn to: Queen");
+            destroyPiece(tile.getChessPiece());
+            new Queen(side, new ChessboardPosition(tile.getRow(), tile.getColumn()));
             popup.hide();
         });
         rook.setOnMousePressed(mouseEvent -> {
-            System.out.println(currentMoveSide.name() + " converted pawn to: Rook");
-//            destroyPiece(tile.getChessPiece());
-            new Rook(this.currentMoveSide, new ChessboardPosition(tile.getRow(), tile.getColumn()));
+            System.out.println(side.name() + " converted pawn to: Rook");
+            destroyPiece(tile.getChessPiece());
+            new Rook(side, new ChessboardPosition(tile.getRow(), tile.getColumn()));
             popup.hide();
         });
         bishop.setOnMousePressed(mouseEvent -> {
-            System.out.println(currentMoveSide.name() + " converted pawn to: Bishop");
-//            destroyPiece(tile.getChessPiece());
-            new Bishop(this.currentMoveSide, new ChessboardPosition(tile.getRow(), tile.getColumn()));
+            System.out.println(side.name() + " converted pawn to: Bishop");
+            destroyPiece(tile.getChessPiece());
+            new Bishop(side, new ChessboardPosition(tile.getRow(), tile.getColumn()));
             popup.hide();
         });
         knight.setOnMousePressed(mouseEvent -> {
-            System.out.println(currentMoveSide.name() + " converted pawn to: Knight");
-//            destroyPiece(tile.getChessPiece());
-            new Knight(this.currentMoveSide, new ChessboardPosition(tile.getRow(), tile.getColumn()));
+            System.out.println(side.name() + " converted pawn to: Knight");
+            destroyPiece(tile.getChessPiece());
+            new Knight(side, new ChessboardPosition(tile.getRow(), tile.getColumn()));
             popup.hide();
         });
 

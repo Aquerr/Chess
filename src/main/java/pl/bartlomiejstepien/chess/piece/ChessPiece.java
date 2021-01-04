@@ -112,8 +112,16 @@ public abstract class ChessPiece
 
         // Add chess piece to alive pieces
         if (this.side == Side.BLACK)
+        {
             chessGame.getAliveBlackFigures().add(this);
-        else chessGame.getAliveWhiteFigures().add(this);
+            chessGame.getChessBoardView().getChildren().add(this.getRectangle());
+        }
+        else
+        {
+            chessGame.getAliveWhiteFigures().add(this);
+            chessGame.getChessBoardView().getChildren().add(this.getRectangle());
+
+        }
     }
 
     public Rectangle getRectangle()
@@ -246,6 +254,7 @@ public abstract class ChessPiece
                 tile.getRectangle().setEffect(new ColorInput(tile.getRectangle().getX() + 5, tile.getRectangle().getY() + 5, tile.getRectangle().getWidth() - 10, tile.getRectangle().getHeight() - 10, Color.LIGHTSTEELBLUE));
         }
     }
+
     public void unHighlightPossibleMovements()
     {
         System.out.println("Hiding possible movements");
