@@ -7,7 +7,8 @@ import pl.bartlomiejstepien.chess.ChessboardPosition;
 
 public class Pawn extends ChessPiece
 {
-    boolean isFirstMove = true;
+    private boolean isFirstMove = true;
+    private boolean lastMoveWasDoubleMove = false;
 
     public Pawn(Side side, ChessboardPosition position)
     {
@@ -18,7 +19,12 @@ public class Pawn extends ChessPiece
     public void moveTo(final ChessBoard.Tile newTile)
     {
         if (isFirstMove)
+        {
+            int absDistanceY = Math.abs(newTile.getRow() - super.getTile().getRow());
+            if (absDistanceY == 2)
+                lastMoveWasDoubleMove = true;
             isFirstMove = false;
+        }
 
         if (newTile.getRow() == 8 && super.getSide() == Side.BLACK)
         {
@@ -68,7 +74,7 @@ public class Pawn extends ChessPiece
         final ChessPiece chessPieceAtNewPosition = newTile.getChessPiece();
         if (absDistanceY == 1 && absDistanceX == 0) // One tile (normal move)
         {
-            System.out.println("Checking posiiton in front of Pawn row=" + newTile.getRow() + " column=" + newTile.getColumn() + ". ChessPiece not exists = " + (chessPieceAtNewPosition == null));
+            System.out.println("Checking position in front of Pawn row=" + newTile.getRow() + " column=" + newTile.getColumn() + ". ChessPiece not exists = " + (chessPieceAtNewPosition == null));
             return chessPieceAtNewPosition == null;
         }
         else if (canMoveTwoTiles(newTile, absDistanceX, absDistanceY))// Two tiles (first move)

@@ -3,17 +3,21 @@ package pl.bartlomiejstepien.chess;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
-import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
 import javafx.scene.text.Font;
@@ -21,10 +25,13 @@ import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Popup;
 import javafx.stage.Stage;
-import javafx.stage.Window;
 import pl.bartlomiejstepien.chess.localization.Localization;
+import pl.bartlomiejstepien.chess.online.ChessOnlineConnection;
+import pl.bartlomiejstepien.chess.online.ClientOnlineConnection;
+import pl.bartlomiejstepien.chess.online.ChessServer;
 import pl.bartlomiejstepien.chess.piece.*;
 
+import java.io.IOException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -43,7 +50,8 @@ public class ChessGame extends Application
 
     private Stage stage;
     private Scene scene;
-    private Group root;
+    private VBox root;
+    private Group mainGroup;
     private Group chessBoardGroup;
 
     private Label labelCurrentMove;
@@ -56,6 +64,15 @@ public class ChessGame extends Application
     private final List<ChessPiece> aliveBlackFigures = new ArrayList<>();
 
     private Side currentMoveSide = Side.WHITE;
+
+    private MenuBar menuBar;
+
+
+    // Online
+    // Host
+    private ChessServer chessServer;
+    // Client
+    private ChessOnlineConnection chessOnlineConnection;
 
     public ChessGame()
     {
@@ -83,20 +100,28 @@ public class ChessGame extends Application
     public void start(Stage primaryStage) throws Exception
     {
         this.stage = primaryStage;
-        this.root = new Group();
-        this.scene = new Scene(root, 600, 600);
+        this.root = new VBox();
+        this.mainGroup = new Group();
+        this.mainGroup.prefWidth(600);
+        this.mainGroup.prefHeight(600);
+        this.scene = new Scene(this.root, 600, 600);
 
         this.labelCurrentMove = new Label(Localization.translate("currentmove") + ": " + (this.currentMoveSide == Side.WHITE ? Localization.translate("whiteside") : Localization.translate("blackside")));
         this.labelCurrentMove.setFont(Font.font("Arial", FontWeight.MEDIUM, FontPosture.REGULAR, 20));
         this.labelCurrentMove.setTranslateX(60);
         this.labelCurrentMove.setTranslateY(15);
-        this.root.getChildren().add(this.labelCurrentMove);
+        this.mainGroup.getChildren().add(this.labelCurrentMove);
 
         this.labelTimer = new Label(Localization.translate("time") + " 00:00:00");
-        this.root.getChildren().add(this.labelTimer);
+        this.mainGroup.getChildren().add(this.labelTimer);
         this.labelTimer.setTranslateX(390);
         this.labelTimer.setTranslateY(15);
         this.labelTimer.setFont(Font.font("Arial", FontWeight.MEDIUM, FontPosture.REGULAR, 20));
+
+        setupMenuBar();
+        this.root.getChildren().add(this.mainGroup);
+
+        VBox.setMargin(this.mainGroup, new Insets(0, 0, 0, 60));
 
         this.timer = new Timer();
         final TimerTask timerTask = new TimerTask()
@@ -111,7 +136,7 @@ public class ChessGame extends Application
         this.timer.scheduleAtFixedRate(timerTask, 0, 1000L);
 
         this.chessBoardGroup = new Group();
-        root.getChildren().add(chessBoardGroup);
+        mainGroup.getChildren().add(chessBoardGroup);
         chessBoardGroup.setTranslateX(60);
         chessBoardGroup.setTranslateY(60);
 
@@ -121,12 +146,133 @@ public class ChessGame extends Application
 
         primaryStage.setTitle(Localization.translate("chess"));
         primaryStage.setScene(scene);
-        primaryStage.setOnCloseRequest(windowEvent ->
-        {
-            Platform.exit();
-            System.exit(0);
-        });
+        primaryStage.setOnCloseRequest(windowEvent -> closeGame());
         primaryStage.show();
+    }
+
+    private void closeGame()
+    {
+        Platform.exit();
+        System.exit(0);
+    }
+
+    private void setupMenuBar()
+    {
+        Menu gameMenu = new Menu(Localization.translate("menu.game"));
+
+        Menu multiplayerMenuItem = new Menu(Localization.translate("menu.game.multiplayer"));
+        gameMenu.getItems().add(multiplayerMenuItem);
+
+        MenuItem hostGame = new MenuItem(Localization.translate("menu.game.multiplayer.host_game"));
+        hostGame.setOnAction(actionEvent -> hostGame());
+        MenuItem connectToIp = new MenuItem(Localization.translate("menu.game.multiplayer.connect_to_ip"));
+        connectToIp.setOnAction(actionEvent -> showConnectToIpPopup());
+        multiplayerMenuItem.getItems().addAll(hostGame, connectToIp);
+
+        MenuItem exit = new MenuItem(Localization.translate("menu.exit"));
+        exit.setOnAction(actionEvent -> closeGame());
+        gameMenu.getItems().add(exit);
+
+        this.menuBar = new MenuBar();
+        this.menuBar.getMenus().add(gameMenu);
+
+        this.menuBar.setPrefWidth(this.scene.getWidth());
+
+        this.root.getChildren().add(this.menuBar);
+    }
+
+    private void showConnectToIpPopup()
+    {
+        // Show modal window where user can enter IP address of the host
+
+        System.out.println("Connecting to ip...");
+
+        Popup popup = new Popup();
+
+        VBox vBox = new VBox();
+        vBox.setStyle("-fx-border-width: 1px");
+        vBox.setStyle("-fx-border-color: black");
+        vBox.setBackground(new Background(new BackgroundFill(Color.NAVAJOWHITE, null, null)));
+
+        TextField textField = new TextField();
+        textField.setOnAction(actionEvent -> {
+            popup.hide();
+            connectToIp(textField.getText());
+        });
+
+        Label label = new Label(Localization.translate("online.enter_ip_address") + ":");
+        label.setFont(Font.font("Arial", FontWeight.MEDIUM, FontPosture.REGULAR, 20));
+        vBox.getChildren().add(label);
+        vBox.getChildren().add(textField);
+
+        popup.getContent().add(vBox);
+        popup.show(this.stage);
+    }
+
+    private void connectToIp(String ipAddress)
+    {
+        System.out.println("Choosen IP Address: " + ipAddress);
+
+        try
+        {
+            this.chessOnlineConnection = ClientOnlineConnection.connect(ipAddress, (packet) -> {
+                System.out.println("CLIENT: Received packet from server: " + packet);
+                Platform.runLater(() -> {
+                    ChessPiece chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(packet.getChessFromTile().getRow(), packet.getChessFromTile().getColumn());
+                    chessPiece.moveTo(ChessGame.getGame().getChessBoard().getTileAt(packet.getMovedTo().getRow(), packet.getMovedTo().getColumn()));
+                });
+            });
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            return;
+        }
+    }
+
+    private void hostGame()
+    {
+        System.out.println("Hosting game...");
+
+        try
+        {
+            this.chessOnlineConnection = new ChessServer();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        System.out.println("Chess server started!");
+
+        Popup popup = showWaitForClientPopup();
+        ((ChessServer)this.chessOnlineConnection).awaitForClient(() -> {
+            Platform.runLater(() ->{
+                root.setDisable(false);
+                popup.hide();
+                System.out.println("Hiding popup!");
+            });
+        });
+        System.out.println("Waiting for client to connect...");
+    }
+
+    private Popup showWaitForClientPopup()
+    {
+        this.root.setDisable(true);
+        Popup popup = new Popup();
+
+        VBox vBox = new VBox();
+        vBox.setStyle("-fx-border-width: 1px");
+        vBox.setStyle("-fx-border-color: black");
+        vBox.setBackground(new Background(new BackgroundFill(Color.NAVAJOWHITE, null, null)));
+
+        Label label = new Label(Localization.translate("online.waiting_for_player"));
+        label.setFont(Font.font("Arial", FontWeight.MEDIUM, FontPosture.REGULAR, 20));
+        vBox.getChildren().add(label);
+
+        popup.getContent().add(vBox);
+        popup.setHideOnEscape(false);
+        popup.show(this.stage);
+        return popup;
     }
 
     private void setupChessFigures()
@@ -197,7 +343,7 @@ public class ChessGame extends Application
         for (int row = 1; row <= 8; row++)
         {
             final Label label = new Label(String.valueOf(letter));
-            label.setTranslateX(row * 60 - 30);
+            label.setTranslateX(row * ChessBoard.TILE_SIZE - 30);
             label.setTranslateY(-20);
             this.chessBoardGroup.getChildren().add(label);
             letter++;
@@ -330,5 +476,15 @@ public class ChessGame extends Application
         popup.getContent().add(vBox);
 
         popup.show(this.stage);
+    }
+
+    public boolean isOnline()
+    {
+        return this.chessOnlineConnection != null;
+    }
+
+    public ChessOnlineConnection getOnlineConnection()
+    {
+        return this.chessOnlineConnection;
     }
 }

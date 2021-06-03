@@ -10,13 +10,12 @@ import javafx.scene.shape.Rectangle;
 import pl.bartlomiejstepien.chess.ChessBoard;
 import pl.bartlomiejstepien.chess.ChessGame;
 import pl.bartlomiejstepien.chess.ChessboardPosition;
+import pl.bartlomiejstepien.chess.online.packets.MovePacket;
 
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.FutureTask;
 
 public abstract class ChessPiece
 {
@@ -43,10 +42,10 @@ public abstract class ChessPiece
 
         this.tile = chessBoard.putFigureAtTile(position.getRow(), position.getColumn(), this);
 
-        this.rectangle = new Rectangle(60, 60);
+        this.rectangle = new Rectangle(ChessBoard.TILE_SIZE, ChessBoard.TILE_SIZE);
         this.rectangle.setFill(Color.WHITE);
-        this.rectangle.setX(position.getColumn() * 60 - 60);
-        this.rectangle.setY(position.getRow() * 60 - 60);
+        this.rectangle.setX(position.getColumn() * ChessBoard.TILE_SIZE - ChessBoard.TILE_SIZE);
+        this.rectangle.setY(position.getRow() * ChessBoard.TILE_SIZE - ChessBoard.TILE_SIZE);
 
         this.image = new Image(imageUrl);
         this.rectangle.setFill(new ImagePattern(this.image));
@@ -54,61 +53,7 @@ public abstract class ChessPiece
         this.lastY = this.rectangle.getY();
         this.lastX = this.rectangle.getX();
 
-        this.rectangle.setOnMousePressed(mouseClickEvent -> {
-            if (!this.getSide().equals(ChessGame.getGame().getCurrentMoveSide()))
-                return;
-
-            // Highlight possible movements
-            highlightPossibleMovements();
-        });
-
-        this.rectangle.setOnMouseDragged(mouseEvent ->
-        {
-            //TODO: Improve this... maybe by locking all tiles?
-            if (!this.getSide().equals(ChessGame.getGame().getCurrentMoveSide()))
-                return;
-
-            double mouseX = mouseEvent.getX();
-            double mouseY = mouseEvent.getY();
-
-            this.rectangle.setX(mouseX - this.rectangle.getWidth() / 2);
-            this.rectangle.setY(mouseY - this.rectangle.getHeight() / 2);
-        });
-
-        this.rectangle.setOnMouseReleased(mouseDragEvent ->
-        {
-            unHighlightPossibleMovements();
-
-            final int rectangleX = (int)this.rectangle.getX();
-            final int rectangleY = (int)this.rectangle.getY();
-
-            // Get tile the mouse is above
-            final Optional<ChessBoard.Tile> optionalTile = ChessGame.getGame().getChessBoard().getIntersectingTile(rectangleX, rectangleY);
-            if (optionalTile.isEmpty())
-            {
-                // Bring figure back to initial position
-                this.rectangle.setX(lastX);
-                this.rectangle.setY(lastY);
-                return;
-            }
-
-            final ChessBoard.Tile newTile = optionalTile.get();
-
-            // Check if chess figure can move to the tile the mouse is above.
-            if (!canMoveTo(newTile))
-            {
-                // Bring figure back to initial position
-                this.rectangle.setX(lastX);
-                this.rectangle.setY(lastY);
-                return;
-            }
-
-            System.out.println("Moving chess piece to tile " + tile.getChessboardPosition());
-            moveTo(newTile);
-        });
-
-        rectangle.addEventHandler(MouseEvent.MOUSE_ENTERED, new ChessBoard.HighlightTileEventHandler(rectangle, true));
-        rectangle.addEventHandler(MouseEvent.MOUSE_EXITED, new ChessBoard.HighlightTileEventHandler(rectangle, false));
+        setupDragEvents(this);
 
         // Add chess piece to alive pieces
         if (this.side == Side.BLACK)
@@ -122,6 +67,72 @@ public abstract class ChessPiece
             chessGame.getChessBoardView().getChildren().add(this.getRectangle());
 
         }
+    }
+
+    private void setupDragEvents(ChessPiece chessPiece)
+    {
+        Rectangle rectangle = chessPiece.getRectangle();
+        rectangle.setOnMousePressed(mouseClickEvent -> {
+            if (!this.getSide().equals(ChessGame.getGame().getCurrentMoveSide()))
+                return;
+
+            // Highlight possible movements
+            highlightPossibleMovements();
+        });
+
+        rectangle.setOnMouseDragged(mouseEvent ->
+        {
+            //TODO: Improve this... maybe by locking all tiles?
+            if (!chessPiece.getSide().equals(ChessGame.getGame().getCurrentMoveSide()))
+                return;
+
+            double mouseX = mouseEvent.getX();
+            double mouseY = mouseEvent.getY();
+
+            rectangle.setX(mouseX - rectangle.getWidth() / 2);
+            rectangle.setY(mouseY - rectangle.getHeight() / 2);
+        });
+
+        rectangle.setOnMouseReleased(mouseDragEvent ->
+        {
+            unHighlightPossibleMovements();
+
+            final int rectangleX = (int)rectangle.getX();
+            final int rectangleY = (int)rectangle.getY();
+
+            // Get tile the mouse is above
+            final Optional<ChessBoard.Tile> optionalTile = ChessGame.getGame().getChessBoard().getIntersectingTile(rectangleX, rectangleY);
+            if (optionalTile.isEmpty())
+            {
+                // Bring figure back to initial position
+                rectangle.setX(lastX);
+                rectangle.setY(lastY);
+                return;
+            }
+
+            final ChessBoard.Tile newTile = optionalTile.get();
+
+            // Check if chess figure can move to the tile the mouse is above.
+            if (!canMoveTo(newTile))
+            {
+                // Bring figure back to initial position
+                rectangle.setX(lastX);
+                rectangle.setY(lastY);
+                return;
+            }
+
+            System.out.println("Moving chess piece to tile " + tile.getChessboardPosition());
+
+            if(ChessGame.getGame().isOnline())
+            {
+                ChessGame.getGame().getOnlineConnection().sendMessage(new MovePacket(this.getTile().getChessboardPosition(), newTile.getChessboardPosition()));
+            }
+
+            moveTo(newTile);
+        });
+
+        rectangle.addEventHandler(MouseEvent.MOUSE_ENTERED, new ChessBoard.HighlightTileEventHandler(rectangle, true));
+        rectangle.addEventHandler(MouseEvent.MOUSE_EXITED, new ChessBoard.HighlightTileEventHandler(rectangle, false));
     }
 
     public Rectangle getRectangle()
@@ -139,16 +150,6 @@ public abstract class ChessPiece
         return side;
     }
 
-//    public void setTilePosition(Vector2i tilePosition)
-//    {
-//        this.lastX = tilePosition.getColumn();
-//        this.lastY = tilePosition.getRow();
-//        this.rectangle.setX(tilePosition.getColumn());
-//        this.rectangle.setY(tilePosition.getRow());
-//        final ChessBoard chessBoard = ChessGame.getGame().getChessBoard();
-//        chessBoard.getChessBoardFigures()[position.getY()][position.getX()] = this;
-//    }
-
     public ChessBoard.Tile getTile()
     {
         return this.tile;
@@ -161,7 +162,7 @@ public abstract class ChessPiece
      *
      * @param newTile the tile that figure should be moved to.
      */
-    protected void moveTo(final ChessBoard.Tile newTile)
+    public void moveTo(final ChessBoard.Tile newTile)
     {
         if (this instanceof King && ((King) this).willBeThreatenedAtTile(this.tile))
         {
@@ -218,15 +219,6 @@ public abstract class ChessPiece
         chessBoard.putFigureAtTile(newTile.getRow(), newTile.getColumn(), this);
 
         ChessGame.getGame().destroyPiece(oldPieceAtNewTile);
-//        if (oldPieceAtNewTile != null)
-//        {
-//             Destroy enemy figure...
-//            if (oldPieceAtNewTile.getSide() == Side.BLACK)
-//                ChessGame.getGame().getAliveBlackFigures().remove(oldPieceAtNewTile);
-//            else
-//                ChessGame.getGame().getAliveWhiteFigures().remove(oldPieceAtNewTile);
-//            ChessGame.getGame().getChessBoardView().getChildren().remove(oldPieceAtNewTile.getRectangle());
-//        }
 
         final King king = ChessGame.getGame().getKing(getSide());
         willKingBeThreatened = king.willBeThreatenedAtTile(king.getTile());

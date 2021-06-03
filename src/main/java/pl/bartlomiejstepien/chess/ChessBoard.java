@@ -15,6 +15,8 @@ import java.util.Optional;
 
 public class ChessBoard
 {
+    public static final int TILE_SIZE = 60;
+
     private final ChessPiece[][] chessBoardFigures = new ChessPiece[8][8];
     private final Tile[][] chessBoardTiles = new Tile[8][8];
 
@@ -60,13 +62,17 @@ public class ChessBoard
 
     public Optional<Tile> getIntersectingTile(final double x, final double y)
     {
-        for (int row = 0; row < this.chessBoardTiles.length; row++)
+        for (Tile[] chessBoardTile : this.chessBoardTiles)
         {
-            for (int column = 0; column < this.chessBoardTiles[row].length; column++)
+            for (final Tile tile : chessBoardTile)
             {
-                final Tile tile = this.chessBoardTiles[row][column];
-                if (tile.getRectangle().intersects(x + 15, y + 15, 30, 30))
+                int tileHalfWidth = TILE_SIZE / 2;
+                if (tile.getRectangle().intersects(x + tileHalfWidth, y + tileHalfWidth, tileHalfWidth, tileHalfWidth))
+                {
+                    System.out.println(tile);
+                    System.out.println("Tile X: " + tile.getRectangle().getX() + " Y: " + tile.getRectangle().getY() + " Intersects: X: " + (x + tileHalfWidth) + " | " + (y + tileHalfWidth));
                     return Optional.of(tile);
+                }
             }
         }
         return Optional.empty();
@@ -93,7 +99,7 @@ public class ChessBoard
             this.row = row;
             this.column = column;
 
-            this.rectangle = new Rectangle(column * 60 - 60, row * 60 - 60, 60, 60);
+            this.rectangle = new Rectangle(column * TILE_SIZE - ChessBoard.TILE_SIZE, row * TILE_SIZE - ChessBoard.TILE_SIZE, TILE_SIZE, TILE_SIZE);
             this.rectangle.setFill(color);
             rectangle.setStrokeType(StrokeType.CENTERED);
 

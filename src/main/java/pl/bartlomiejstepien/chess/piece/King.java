@@ -64,7 +64,7 @@ public class King extends ChessPiece
     }
 
     @Override
-    protected void moveTo(ChessBoard.Tile newTile)
+    public void moveTo(ChessBoard.Tile newTile)
     {
         this.hasMoved = true;
 
