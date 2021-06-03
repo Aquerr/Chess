@@ -1,7 +1,8 @@
 package pl.bartlomiejstepien.chess.online;
 
 import com.google.gson.Gson;
-import pl.bartlomiejstepien.chess.online.packets.MovePacket;
+import com.google.gson.GsonBuilder;
+import pl.bartlomiejstepien.chess.online.packets.Packet;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,18 +17,20 @@ import java.util.function.Consumer;
 public class ClientOnlineConnection implements ChessOnlineConnection
 {
     private static final int DEFAULT_PORT = 19_009;
-    private static final Gson GSON = new Gson();
+    private static final Gson GSON = new GsonBuilder()
+            .registerTypeAdapter(Packet.class, new PacketAdapter())
+            .create();
 
     private final Socket socket;
     private final BufferedReader inputStream;
     private final OutputStreamWriter outputStream;
 
-    public static ClientOnlineConnection of(Socket socket, final Consumer<MovePacket> packetProcessor) throws Exception
+    public static ClientOnlineConnection of(Socket socket, final Consumer<Packet> packetProcessor) throws Exception
     {
         return new ClientOnlineConnection(socket, socket.getInputStream(), socket.getOutputStream(), packetProcessor);
     }
 
-    public static ClientOnlineConnection connect(String ipAddressWithPort, final Consumer<MovePacket> packetProcessor) throws Exception
+    public static ClientOnlineConnection connect(String ipAddressWithPort, final Consumer<Packet> packetProcessor) throws Exception
     {
         ChessServerAddress chessServerAddress = ChessServerAddress.of(ipAddressWithPort);
 
@@ -36,7 +39,7 @@ public class ClientOnlineConnection implements ChessOnlineConnection
         return new ClientOnlineConnection(socket, socket.getInputStream(), socket.getOutputStream(), packetProcessor);
     }
     
-    private ClientOnlineConnection(Socket socket, InputStream inputStream, OutputStream outputStream, final Consumer<MovePacket> packetProcessor)
+    private ClientOnlineConnection(Socket socket, InputStream inputStream, OutputStream outputStream, final Consumer<Packet> packetProcessor)
     {
         this.socket = socket;
         this.inputStream = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
@@ -46,7 +49,7 @@ public class ClientOnlineConnection implements ChessOnlineConnection
 
     }
 
-    public void sendMessage(MovePacket packet)
+    public void sendMessage(Packet packet)
     {
         try
         {
@@ -61,7 +64,7 @@ public class ClientOnlineConnection implements ChessOnlineConnection
         }
     }
 
-    private void processReceivedMessages(Consumer<MovePacket> consumer)
+    private void processReceivedMessages(Consumer<Packet> consumer)
     {
         var thread = new Thread(() ->
         {
@@ -73,11 +76,11 @@ public class ClientOnlineConnection implements ChessOnlineConnection
         thread.start();
     }
 
-    private MovePacket awaitMessage()
+    private Packet awaitMessage()
     {
         try
         {
-            return GSON.fromJson(this.inputStream.readLine(), MovePacket.class);
+            return GSON.fromJson(this.inputStream.readLine(), Packet.class);
         }
         catch (IOException e)
         {

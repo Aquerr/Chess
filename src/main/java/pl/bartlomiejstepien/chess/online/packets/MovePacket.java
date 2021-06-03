@@ -6,6 +6,7 @@ public class MovePacket implements Packet
 {
     private ChessboardPosition chessPieceFromTile;
     private ChessboardPosition movedTo;
+    private final PacketType packetType = PacketType.MOVE;
 
     public MovePacket()
     {
@@ -35,5 +36,11 @@ public class MovePacket implements Packet
                 "chessPieceFromTile=" + chessPieceFromTile +
                 ", movedTo=" + movedTo +
                 '}';
+    }
+
+    @Override
+    public PacketType packetType()
+    {
+        return packetType;
     }
 }

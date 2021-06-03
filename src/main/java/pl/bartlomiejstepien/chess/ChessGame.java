@@ -29,6 +29,7 @@ import pl.bartlomiejstepien.chess.localization.Localization;
 import pl.bartlomiejstepien.chess.online.ChessOnlineConnection;
 import pl.bartlomiejstepien.chess.online.ClientOnlineConnection;
 import pl.bartlomiejstepien.chess.online.ChessServer;
+import pl.bartlomiejstepien.chess.online.packets.MovePacket;
 import pl.bartlomiejstepien.chess.piece.*;
 
 import java.io.IOException;
@@ -42,9 +43,13 @@ import java.util.function.Function;
 
 public class ChessGame extends Application
 {
+    private static final int WINDOW_HEIGHT = 600;
+    private static final int WINDOW_WIDTH = 600;
+
     private static ChessGame INSTANCE;
 
-    private final ChessBoard chessBoard;
+    private ChessBoard chessBoard;
+
     private King blackKing;
     private King whiteKing;
 
@@ -77,7 +82,6 @@ public class ChessGame extends Application
     public ChessGame()
     {
         INSTANCE = this;
-        this.chessBoard = new ChessBoard();
     }
 
     public static ChessGame getGame()
@@ -100,52 +104,10 @@ public class ChessGame extends Application
     public void start(Stage primaryStage) throws Exception
     {
         this.stage = primaryStage;
-        this.root = new VBox();
-        this.mainGroup = new Group();
-        this.mainGroup.prefWidth(600);
-        this.mainGroup.prefHeight(600);
-        this.scene = new Scene(this.root, 600, 600);
 
-        this.labelCurrentMove = new Label(Localization.translate("currentmove") + ": " + (this.currentMoveSide == Side.WHITE ? Localization.translate("whiteside") : Localization.translate("blackside")));
-        this.labelCurrentMove.setFont(Font.font("Arial", FontWeight.MEDIUM, FontPosture.REGULAR, 20));
-        this.labelCurrentMove.setTranslateX(60);
-        this.labelCurrentMove.setTranslateY(15);
-        this.mainGroup.getChildren().add(this.labelCurrentMove);
-
-        this.labelTimer = new Label(Localization.translate("time") + " 00:00:00");
-        this.mainGroup.getChildren().add(this.labelTimer);
-        this.labelTimer.setTranslateX(390);
-        this.labelTimer.setTranslateY(15);
-        this.labelTimer.setFont(Font.font("Arial", FontWeight.MEDIUM, FontPosture.REGULAR, 20));
-
-        setupMenuBar();
-        this.root.getChildren().add(this.mainGroup);
-
-        VBox.setMargin(this.mainGroup, new Insets(0, 0, 0, 60));
-
-        this.timer = new Timer();
-        final TimerTask timerTask = new TimerTask()
-        {
-            @Override
-            public void run()
-            {
-                seconds++;
-                Platform.runLater(() -> labelTimer.setText(Localization.translate("time") + ": " + LocalTime.MIN.plusSeconds(seconds).format(DateTimeFormatter.ISO_LOCAL_TIME)));
-            }
-        };
-        this.timer.scheduleAtFixedRate(timerTask, 0, 1000L);
-
-        this.chessBoardGroup = new Group();
-        mainGroup.getChildren().add(chessBoardGroup);
-        chessBoardGroup.setTranslateX(60);
-        chessBoardGroup.setTranslateY(60);
-
-        // Draw chessboard
-        drawChessboard();
-        setupChessFigures();
+        setupUI();
 
         primaryStage.setTitle(Localization.translate("chess"));
-        primaryStage.setScene(scene);
         primaryStage.setOnCloseRequest(windowEvent -> closeGame());
         primaryStage.show();
     }
@@ -176,7 +138,7 @@ public class ChessGame extends Application
         this.menuBar = new MenuBar();
         this.menuBar.getMenus().add(gameMenu);
 
-        this.menuBar.setPrefWidth(this.scene.getWidth());
+        this.menuBar.setPrefWidth(WINDOW_WIDTH);
 
         this.root.getChildren().add(this.menuBar);
     }
@@ -211,17 +173,22 @@ public class ChessGame extends Application
 
     private void connectToIp(String ipAddress)
     {
-        System.out.println("Choosen IP Address: " + ipAddress);
+        System.out.println("Chosen IP Address: " + ipAddress);
 
         try
         {
             this.chessOnlineConnection = ClientOnlineConnection.connect(ipAddress, (packet) -> {
                 System.out.println("CLIENT: Received packet from server: " + packet);
-                Platform.runLater(() -> {
-                    ChessPiece chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(packet.getChessFromTile().getRow(), packet.getChessFromTile().getColumn());
-                    chessPiece.moveTo(ChessGame.getGame().getChessBoard().getTileAt(packet.getMovedTo().getRow(), packet.getMovedTo().getColumn()));
-                });
+                if (packet instanceof MovePacket)
+                {
+                    MovePacket movePacket = (MovePacket) packet;
+                    Platform.runLater(() -> {
+                        ChessPiece chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(movePacket.getChessFromTile().getRow(), movePacket.getChessFromTile().getColumn());
+                        chessPiece.moveTo(ChessGame.getGame().getChessBoard().getTileAt(movePacket.getMovedTo().getRow(), movePacket.getMovedTo().getColumn()));
+                    });
+                }
             });
+            restartGame();
         }
         catch (Exception e)
         {
@@ -250,6 +217,7 @@ public class ChessGame extends Application
                 root.setDisable(false);
                 popup.hide();
                 System.out.println("Hiding popup!");
+                restartGame();
             });
         });
         System.out.println("Waiting for client to connect...");
@@ -324,6 +292,11 @@ public class ChessGame extends Application
 
     private void drawChessboard()
     {
+        this.chessBoardGroup = new Group();
+        mainGroup.getChildren().add(chessBoardGroup);
+        chessBoardGroup.setTranslateX(60);
+        chessBoardGroup.setTranslateY(60);
+
         Function<Color, Color> colorChanger = (color) -> color == Color.NAVAJOWHITE ? Color.SADDLEBROWN : Color.NAVAJOWHITE;
         Color color = Color.NAVAJOWHITE;
         for (int row = 0; row < 8; row++)
@@ -486,5 +459,57 @@ public class ChessGame extends Application
     public ChessOnlineConnection getOnlineConnection()
     {
         return this.chessOnlineConnection;
+    }
+
+    public void restartGame()
+    {
+        this.chessBoard = new ChessBoard();
+        this.mainGroup.getChildren().remove(this.chessBoardGroup);
+        drawChessboard();
+        setupChessFigures();
+    }
+
+    private void setupUI()
+    {
+        this.root = new VBox();
+        this.scene = new Scene(this.root, WINDOW_WIDTH, WINDOW_HEIGHT);
+        this.mainGroup = new Group();
+        this.mainGroup.prefWidth(600);
+        this.mainGroup.prefHeight(600);
+
+        setupMenuBar();
+
+        this.labelCurrentMove = new Label(Localization.translate("currentmove") + ": " + (this.currentMoveSide == Side.WHITE ? Localization.translate("whiteside") : Localization.translate("blackside")));
+        this.labelCurrentMove.setFont(Font.font("Arial", FontWeight.MEDIUM, FontPosture.REGULAR, 20));
+        this.labelCurrentMove.setTranslateX(60);
+        this.labelCurrentMove.setTranslateY(15);
+        this.mainGroup.getChildren().add(this.labelCurrentMove);
+
+        this.labelTimer = new Label(Localization.translate("time") + " 00:00:00");
+        this.mainGroup.getChildren().add(this.labelTimer);
+        this.labelTimer.setTranslateX(390);
+        this.labelTimer.setTranslateY(15);
+        this.labelTimer.setFont(Font.font("Arial", FontWeight.MEDIUM, FontPosture.REGULAR, 20));
+
+        this.root.getChildren().add(this.mainGroup);
+
+        VBox.setMargin(this.mainGroup, new Insets(0, 0, 0, 60));
+
+        this.timer = new Timer();
+        final TimerTask timerTask = new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                seconds++;
+                Platform.runLater(() -> labelTimer.setText(Localization.translate("time") + ": " + LocalTime.MIN.plusSeconds(seconds).format(DateTimeFormatter.ISO_LOCAL_TIME)));
+            }
+        };
+        this.timer.scheduleAtFixedRate(timerTask, 0, 1000L);
+
+        // Draw chessboard
+        restartGame();
+
+        this.stage.setScene(this.scene);
     }
 }
