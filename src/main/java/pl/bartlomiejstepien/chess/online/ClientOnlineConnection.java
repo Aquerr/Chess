@@ -3,6 +3,7 @@ package pl.bartlomiejstepien.chess.online;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import pl.bartlomiejstepien.chess.online.packets.Packet;
+import pl.bartlomiejstepien.chess.piece.Side;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -62,6 +63,12 @@ public class ClientOnlineConnection implements ChessOnlineConnection
         {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public Side getChessSide()
+    {
+        return Side.BLACK;
     }
 
     private void processReceivedMessages(Consumer<Packet> consumer)

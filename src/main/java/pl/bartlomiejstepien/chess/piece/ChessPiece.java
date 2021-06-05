@@ -69,11 +69,27 @@ public abstract class ChessPiece
         }
     }
 
+    private boolean canMoveThisChessSide()
+    {
+        Side side = ChessGame.getGame().getCurrentMoveSide();
+        Side thisChessSide = this.getSide();
+        boolean isOnline = ChessGame.getGame().isOnline();
+
+        if (isOnline)
+        {
+            return ChessGame.getGame().getOnlineConnection().getChessSide().equals(side) && side.equals(thisChessSide);
+        }
+        else
+        {
+            return side.equals(thisChessSide);
+        }
+    }
+
     private void setupDragEvents(ChessPiece chessPiece)
     {
         Rectangle rectangle = chessPiece.getRectangle();
         rectangle.setOnMousePressed(mouseClickEvent -> {
-            if (!this.getSide().equals(ChessGame.getGame().getCurrentMoveSide()))
+            if (!canMoveThisChessSide())
                 return;
 
             // Highlight possible movements
@@ -83,7 +99,7 @@ public abstract class ChessPiece
         rectangle.setOnMouseDragged(mouseEvent ->
         {
             //TODO: Improve this... maybe by locking all tiles?
-            if (!chessPiece.getSide().equals(ChessGame.getGame().getCurrentMoveSide()))
+            if (!canMoveThisChessSide())
                 return;
 
             double mouseX = mouseEvent.getX();

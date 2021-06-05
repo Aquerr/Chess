@@ -35,7 +35,7 @@ import pl.bartlomiejstepien.chess.piece.*;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -62,21 +62,18 @@ public class ChessGame extends Application
     private Label labelCurrentMove;
     private Label labelTimer;
 
-    private Timer timer;
+    private Timer timer = new Timer();
+    private TimerTask timerTask;
     private int seconds;
 
-    private final List<ChessPiece> aliveWhiteFigures = new ArrayList<>();
-    private final List<ChessPiece> aliveBlackFigures = new ArrayList<>();
+    private final List<ChessPiece> aliveWhiteFigures = new LinkedList<>();
+    private final List<ChessPiece> aliveBlackFigures = new LinkedList<>();
 
     private Side currentMoveSide = Side.WHITE;
 
     private MenuBar menuBar;
 
-
     // Online
-    // Host
-    private ChessServer chessServer;
-    // Client
     private ChessOnlineConnection chessOnlineConnection;
 
     public ChessGame()
@@ -156,16 +153,16 @@ public class ChessGame extends Application
         vBox.setStyle("-fx-border-color: black");
         vBox.setBackground(new Background(new BackgroundFill(Color.NAVAJOWHITE, null, null)));
 
-        TextField textField = new TextField();
-        textField.setOnAction(actionEvent -> {
+        TextField ipAddressField = new TextField();
+        ipAddressField.setOnAction(actionEvent -> {
             popup.hide();
-            connectToIp(textField.getText());
+            connectToIp(ipAddressField.getText());
         });
 
         Label label = new Label(Localization.translate("online.enter_ip_address") + ":");
         label.setFont(Font.font("Arial", FontWeight.MEDIUM, FontPosture.REGULAR, 20));
         vBox.getChildren().add(label);
-        vBox.getChildren().add(textField);
+        vBox.getChildren().add(ipAddressField);
 
         popup.getContent().add(vBox);
         popup.show(this.stage);
@@ -245,6 +242,9 @@ public class ChessGame extends Application
 
     private void setupChessFigures()
     {
+        this.aliveWhiteFigures.clear();
+        this.aliveBlackFigures.clear();
+
         // Pawns
         for (int i = 1; i <= 8; i++)
         {
@@ -277,17 +277,6 @@ public class ChessGame extends Application
         final Bishop blackBishop2 = new Bishop(Side.BLACK, new ChessboardPosition(1, 6));
         final Bishop whiteBishop1 = new Bishop(Side.WHITE, new ChessboardPosition(8, 3));
         final Bishop whiteBishop2 = new Bishop(Side.WHITE, new ChessboardPosition(8, 6));
-
-        // Add figure rectangles/boxes to view
-//        for (final ChessPiece chessPiece : this.aliveWhiteFigures)
-//        {
-//            this.chessBoardGroup.getChildren().add(chessPiece.getRectangle());
-//        }
-//
-//        for (final ChessPiece chessPiece : this.aliveBlackFigures)
-//        {
-//            this.chessBoardGroup.getChildren().add(chessPiece.getRectangle());
-//        }
     }
 
     private void drawChessboard()
@@ -367,6 +356,7 @@ public class ChessGame extends Application
 
     public void showPawnReplacementWindow(Side side, final ChessBoard.Tile tile)
     {
+        this.root.setDisable(true);
         Popup popup = new Popup();
 
         VBox vBox = new VBox();
@@ -376,7 +366,7 @@ public class ChessGame extends Application
 
         TilePane group = new TilePane(Orientation.HORIZONTAL, 0, 0.5);
 
-        Label label = new Label("Select chess piece:");
+        Label label = new Label(Localization.translate("select_chess_piece") + ":");
         label.setFont(Font.font("Arial", FontWeight.MEDIUM, FontPosture.REGULAR, 20));
         vBox.getChildren().add(label);
         vBox.getChildren().add(group);
@@ -415,29 +405,37 @@ public class ChessGame extends Application
         knight.addEventHandler(MouseEvent.MOUSE_ENTERED, new ChessBoard.HighlightTileEventHandler(knight, true));
         knight.addEventHandler(MouseEvent.MOUSE_EXITED, new ChessBoard.HighlightTileEventHandler(knight, false));
 
-        queen.setOnMousePressed(mouseEvent -> {
+        queen.setOnMousePressed(mouseEvent ->
+        {
             System.out.println(side.name() + " converted pawn to: Queen");
             destroyPiece(tile.getChessPiece());
             new Queen(side, new ChessboardPosition(tile.getRow(), tile.getColumn()));
             popup.hide();
+            this.root.setDisable(false);
         });
-        rook.setOnMousePressed(mouseEvent -> {
+        rook.setOnMousePressed(mouseEvent ->
+        {
             System.out.println(side.name() + " converted pawn to: Rook");
             destroyPiece(tile.getChessPiece());
             new Rook(side, new ChessboardPosition(tile.getRow(), tile.getColumn()));
             popup.hide();
+            this.root.setDisable(false);
         });
-        bishop.setOnMousePressed(mouseEvent -> {
+        bishop.setOnMousePressed(mouseEvent ->
+        {
             System.out.println(side.name() + " converted pawn to: Bishop");
             destroyPiece(tile.getChessPiece());
             new Bishop(side, new ChessboardPosition(tile.getRow(), tile.getColumn()));
             popup.hide();
+            this.root.setDisable(false);
         });
-        knight.setOnMousePressed(mouseEvent -> {
+        knight.setOnMousePressed(mouseEvent ->
+        {
             System.out.println(side.name() + " converted pawn to: Knight");
             destroyPiece(tile.getChessPiece());
             new Knight(side, new ChessboardPosition(tile.getRow(), tile.getColumn()));
             popup.hide();
+            this.root.setDisable(false);
         });
 
         final ObservableList<Node> groupNodes = group.getChildren();
@@ -467,6 +465,7 @@ public class ChessGame extends Application
         this.mainGroup.getChildren().remove(this.chessBoardGroup);
         drawChessboard();
         setupChessFigures();
+        restartTimer();
     }
 
     private void setupUI()
@@ -474,8 +473,8 @@ public class ChessGame extends Application
         this.root = new VBox();
         this.scene = new Scene(this.root, WINDOW_WIDTH, WINDOW_HEIGHT);
         this.mainGroup = new Group();
-        this.mainGroup.prefWidth(600);
-        this.mainGroup.prefHeight(600);
+        this.mainGroup.prefWidth(WINDOW_WIDTH);
+        this.mainGroup.prefHeight(WINDOW_HEIGHT);
 
         setupMenuBar();
 
@@ -495,8 +494,19 @@ public class ChessGame extends Application
 
         VBox.setMargin(this.mainGroup, new Insets(0, 0, 0, 60));
 
-        this.timer = new Timer();
-        final TimerTask timerTask = new TimerTask()
+        // Draw chessboard
+        restartGame();
+
+        this.stage.setScene(this.scene);
+    }
+
+    private void restartTimer()
+    {
+        if (this.timerTask != null)
+            this.timerTask.cancel();
+
+        this.seconds = 0;
+        this.timerTask = new TimerTask()
         {
             @Override
             public void run()
@@ -506,10 +516,5 @@ public class ChessGame extends Application
             }
         };
         this.timer.scheduleAtFixedRate(timerTask, 0, 1000L);
-
-        // Draw chessboard
-        restartGame();
-
-        this.stage.setScene(this.scene);
     }
 }

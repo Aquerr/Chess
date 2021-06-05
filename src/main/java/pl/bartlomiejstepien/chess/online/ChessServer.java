@@ -5,6 +5,7 @@ import pl.bartlomiejstepien.chess.ChessGame;
 import pl.bartlomiejstepien.chess.online.packets.MovePacket;
 import pl.bartlomiejstepien.chess.online.packets.Packet;
 import pl.bartlomiejstepien.chess.piece.ChessPiece;
+import pl.bartlomiejstepien.chess.piece.Side;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -57,8 +58,13 @@ public class ChessServer implements ChessOnlineConnection
             Platform.runLater(() -> {
                 ChessPiece chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(movePacket.getChessFromTile().getRow(), movePacket.getChessFromTile().getColumn());
                 chessPiece.moveTo(ChessGame.getGame().getChessBoard().getTileAt(movePacket.getMovedTo().getRow(), movePacket.getMovedTo().getColumn()));
-                ChessGame.getGame().restartGame();
             });
         }
+    }
+
+    @Override
+    public Side getChessSide()
+    {
+        return Side.WHITE;
     }
 }
