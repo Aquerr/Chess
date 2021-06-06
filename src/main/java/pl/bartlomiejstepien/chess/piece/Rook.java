@@ -13,6 +13,19 @@ public class Rook extends ChessPiece
         super(side, position, side == Side.BLACK ? "icons/icons8-rook-50.png" : "icons/icons8-rook-50-white.png");
     }
 
+    public boolean hasMoved()
+    {
+        return this.hasMoved;
+    }
+
+    @Override
+    public void moveTo(ChessBoard.Tile newTile)
+    {
+        this.hasMoved = true;
+
+        super.moveTo(newTile);
+    }
+
     @Override
     public boolean canMoveTo(ChessBoard.Tile tile)
     {

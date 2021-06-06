@@ -312,7 +312,7 @@ public class ChessGame extends Application
         }
     }
 
-    public static void main( String[] args )
+    public static void startChess(String[] args)
     {
         ChessGame.launch(args);
     }
@@ -335,6 +335,11 @@ public class ChessGame extends Application
     public List<ChessPiece> getAliveBlackFigures()
     {
         return this.aliveBlackFigures;
+    }
+
+    public List<ChessPiece> getAliveFigures(Side side)
+    {
+        return side == Side.BLACK ? getAliveBlackFigures() : getAliveWhiteFigures();
     }
 
     public void destroyPiece(final ChessPiece chessPiece)

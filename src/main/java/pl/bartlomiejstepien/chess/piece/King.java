@@ -4,7 +4,6 @@ import pl.bartlomiejstepien.chess.ChessBoard;
 import pl.bartlomiejstepien.chess.ChessGame;
 import pl.bartlomiejstepien.chess.ChessboardPosition;
 
-import java.util.LinkedList;
 import java.util.List;
 
 public class King extends ChessPiece
@@ -14,6 +13,11 @@ public class King extends ChessPiece
     public King(Side side, ChessboardPosition position)
     {
         super(side, position, side == Side.BLACK ? "icons/icons8-king-50.png" : "icons/icons8-king-50-white.png");
+    }
+
+    public boolean hasMoved()
+    {
+        return this.hasMoved;
     }
 
     @Override
@@ -35,7 +39,7 @@ public class King extends ChessPiece
         //TODO: Block moving to tiles that can be attacked by enemy chess.
 
         // Check if king can do castling
-        if (absDistanceY == 0 && (absDistanceX == 2 || absDistanceX == 3) && canDoCastling(tile, absDistanceX))
+        if (absDistanceY == 0 && canDoCastling(tile, absDistanceX))
             canDoCastling = true;
 
         // Validate movement
@@ -104,25 +108,53 @@ public class King extends ChessPiece
         if (hasMoved)
             return false;
 
-        if ((absDistanceX == 2))
-        {
-            final ChessPiece chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(newTile.getRow(), newTile.getColumn());
-            if (chessPiece != null)
-                return false;
+        if (absDistanceX != 2)
+            return false;
 
-            ChessBoard.Tile currentTile = super.getTile();
-            if (currentTile.getColumn() < newTile.getColumn()) // +X
+        ChessBoard.Tile currentTile = super.getTile();
+        if (currentTile.getColumn() < newTile.getColumn()) // +X
+        {
+            ChessPiece chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(this.getTile().getRow(), 8);
+            if (chessPiece != null && chessPiece instanceof Rook)
             {
-                // Check if tile after newTile has Rook
-                final ChessPiece rook = ChessGame.getGame().getChessBoard().getFigureAt(currentTile.getRow(), newTile.getColumn() + 1);
-                return rook instanceof Rook && rook.getSide().equals(this.getSide());
+                Rook rook = (Rook) chessPiece;
+                return rook.getSide().equals(this.getSide()) && !rook.hasMoved() && !areTilesInWayToRookAttackedOrOccupied(rook);
             }
-            else
+            else return false;
+        }
+        else // -X
+        {
+            ChessPiece chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(this.getTile().getRow(), 1);
+            if (chessPiece != null && chessPiece instanceof Rook)
             {
-                // Check if tile after newTile has Rook
-                final ChessPiece rook = ChessGame.getGame().getChessBoard().getFigureAt(currentTile.getRow(), newTile.getColumn() - 1);
-                return rook instanceof Rook && rook.getSide().equals(this.getSide());
+                Rook rook = (Rook) chessPiece;
+                return rook.getSide().equals(this.getSide()) && !rook.hasMoved() && !areTilesInWayToRookAttackedOrOccupied(rook);
             }
+            else return false;
+        }
+    }
+
+    private boolean areTilesInWayToRookAttackedOrOccupied(Rook rook)
+    {
+        // Check if king is attacked
+        if (this.willBeThreatenedAtTile(this.getTile()))
+            return true;
+
+        // Check if there are chesspieces in way and if tiles are attacked
+        int row = this.getTile().getRow();
+        int rookColumn = rook.getTile().getColumn();
+        int kingColumn = this.getTile().getColumn();
+        int startColumn = rookColumn > kingColumn ? kingColumn + 1 : rookColumn + 1;
+        int endColumn = rookColumn > kingColumn ? rookColumn - 1 : kingColumn - 1;
+
+        for (int column = startColumn; column <= endColumn; column++)
+        {
+            System.out.println("Checking tile at column: " + column);
+            ChessBoard.Tile tile = ChessGame.getGame().getChessBoard().getTileAt(row, column);
+            if (tile.getChessPiece() != null)
+                return true;
+            else if (ChessGame.getGame().getAliveFigures(this.getSide().opposite()).stream().anyMatch(chessPiece -> chessPiece.canMoveTo(tile)))
+                return true;
         }
 
         return false;
@@ -144,4 +176,28 @@ public class King extends ChessPiece
             rook.moveTo(ChessGame.getGame().getChessBoard().getTileAt(newKingTile.getRow(), newKingTile.getColumn() + 1));
         }
     }
+
+//    private Rook getPossibleRookForCastling(boolean towardsNegativeX)
+//    {
+//        int column = this.getTile().getColumn();
+//        while (true)
+//        {
+//            if (towardsNegativeX)
+//                column -= 1;
+//            else
+//                column += 1;
+//            ChessBoard.Tile tile = ChessGame.getGame().getChessBoard().getTileAt(this.getTile().getRow(), column);
+//            if (tile == null)
+//                break;
+//
+//            ChessPiece chessPieceAtTile = tile.getChessPiece();
+//
+//            if (chessPieceAtTile instanceof Rook)
+//                return (Rook)chessPieceAtTile;
+//            else
+//                break;
+//        }
+//
+//        return null;
+//    }
 }
