@@ -287,28 +287,45 @@ public class ChessGame extends Application
         chessBoardGroup.setTranslateY(60);
 
         Function<Color, Color> colorChanger = (color) -> color == Color.NAVAJOWHITE ? Color.SADDLEBROWN : Color.NAVAJOWHITE;
-        Color color = Color.NAVAJOWHITE;
-        for (int row = 0; row < 8; row++)
-        {
-            for (int column = 0; column < 8; column++)
-            {
-                final ChessBoard.Tile tile = new ChessBoard.Tile(row + 1, column + 1, color);
-                this.chessBoardGroup.getChildren().add(tile.getRectangle());
-                this.chessBoard.getChessBoardTiles()[row][column] = tile;
-
-                color = colorChanger.apply(color);
-            }
-            color = colorChanger.apply(color);
-        }
+        Color color = Color.SADDLEBROWN;
 
         char letter = 'A';
-        for (int row = 1; row <= 8; row++)
+        for (int row = 1; row <= 9; row++)
         {
-            final Label label = new Label(String.valueOf(letter));
-            label.setTranslateX(row * ChessBoard.TILE_SIZE - 30);
-            label.setTranslateY(-20);
-            this.chessBoardGroup.getChildren().add(label);
-            letter++;
+            for (int column = 1; column <= 9; column++)
+            {
+                // Letters
+                if (row == 1 && column == 1)
+                {
+                    continue;
+                }
+                else if (row == 1)
+                {
+                    final Label label = new Label(String.valueOf(letter));
+                    label.setTranslateX((column - 1) * ChessBoard.TILE_SIZE - ChessBoard.TILE_SIZE / 2);
+                    label.setTranslateY(-20);
+                    this.chessBoardGroup.getChildren().add(label);
+                    letter++;
+                }
+                // Numbers
+                else if (column == 1)
+                {
+                    final Label label = new Label(String.valueOf(10 - row));
+                    label.setTranslateY((row - 1) * ChessBoard.TILE_SIZE - ChessBoard.TILE_SIZE / 2);
+                    label.setTranslateX(-20);
+                    this.chessBoardGroup.getChildren().add(label);
+                }
+                // Actual Tiles
+                else
+                {
+                    final ChessBoard.Tile tile = new ChessBoard.Tile(String.valueOf(letter) + (10 - row), row - 1, column - 1, color);
+                    this.chessBoardGroup.getChildren().add(tile.getRectangle());
+                    this.chessBoard.getChessBoardTiles()[row - 2][column - 2] = tile;
+
+                    color = colorChanger.apply(color);
+                }
+            }
+            color = colorChanger.apply(color);
         }
     }
 

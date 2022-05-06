@@ -8,10 +8,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
 import pl.bartlomiejstepien.chess.piece.ChessPiece;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class ChessBoard
 {
@@ -85,6 +82,8 @@ public class ChessBoard
 
     public static final class Tile
     {
+        private final String name;
+
         private final int row;
         private final int column;
 
@@ -92,8 +91,9 @@ public class ChessBoard
 
         private ChessPiece chessPiece;
 
-        public Tile(final int row, final int column, final Color color)
+        public Tile(final String name, final int row, final int column, final Color color)
         {
+            this.name = name;
             this.row = row;
             this.column = column;
 
@@ -105,6 +105,11 @@ public class ChessBoard
             rectangle.addEventHandler(MouseEvent.MOUSE_EXITED, new HighlightTileEventHandler(rectangle, false));
 
             rectangle.setStroke(Color.BLACK);
+        }
+
+        public String getName()
+        {
+            return name;
         }
 
         public int getRow()
@@ -138,12 +143,29 @@ public class ChessBoard
         }
 
         @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Tile tile = (Tile) o;
+            return row == tile.row && column == tile.column && name.equals(tile.name) && rectangle.equals(tile.rectangle) && Objects.equals(chessPiece, tile.chessPiece);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(name, row, column, rectangle, chessPiece);
+        }
+
+        @Override
         public String toString()
         {
             return "Tile{" +
-                    "row=" + row +
+                    "name='" + name + '\'' +
+                    ", row=" + row +
                     ", column=" + column +
                     ", rectangle=" + rectangle +
+                    ", chessPiece=" + chessPiece +
                     '}';
         }
     }
