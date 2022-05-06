@@ -94,6 +94,7 @@ public abstract class ChessPiece
 
             // Highlight possible movements
             highlightPossibleMovements();
+            System.out.println("Mouse Pressed at Tile X: " + tile.getRectangle().getX() + " Y: " + tile.getRectangle().getY() + " Mouse Pos: X: " + (mouseClickEvent.getX()) + " | Y: " + (mouseClickEvent.getY()));
         });
 
         rectangle.setOnMouseDragged(mouseEvent ->
@@ -116,6 +117,8 @@ public abstract class ChessPiece
             final int rectangleX = (int)rectangle.getX();
             final int rectangleY = (int)rectangle.getY();
 
+            System.out.println("Mouse Released at Tile X: " + tile.getRectangle().getX() + " Y: " + tile.getRectangle().getY() + " Mouse Pos: X: " + (mouseDragEvent.getX()) + " | Y: " + (mouseDragEvent.getY()));
+
             // Get tile the mouse is above
             final Optional<ChessBoard.Tile> optionalTile = ChessGame.getGame().getChessBoard().getIntersectingTile(rectangleX, rectangleY);
             if (optionalTile.isEmpty())
@@ -136,8 +139,6 @@ public abstract class ChessPiece
                 rectangle.setY(lastY);
                 return;
             }
-
-            System.out.println("Moving chess piece to tile " + tile.getChessboardPosition());
 
             if(ChessGame.getGame().isOnline())
             {
@@ -218,6 +219,7 @@ public abstract class ChessPiece
                 kingTileRectangle.setEffect(null);
             }
         }
+        System.out.printf("Moved %s to %s%n", this.getClass().getSimpleName(), newTile);
     }
 
     protected abstract boolean canMoveTo(final ChessBoard.Tile tile);

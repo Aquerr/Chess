@@ -149,7 +149,6 @@ public class King extends ChessPiece
 
         for (int column = startColumn; column <= endColumn; column++)
         {
-            System.out.println("Checking tile at column: " + column);
             ChessBoard.Tile tile = ChessGame.getGame().getChessBoard().getTileAt(row, column);
             if (tile.getChessPiece() != null)
                 return true;

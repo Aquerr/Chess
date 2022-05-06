@@ -69,8 +69,6 @@ public class ChessBoard
                 int tileHalfWidth = TILE_SIZE / 2;
                 if (tile.getRectangle().intersects(x + tileHalfWidth, y + tileHalfWidth, tileHalfWidth, tileHalfWidth))
                 {
-                    System.out.println(tile);
-                    System.out.println("Tile X: " + tile.getRectangle().getX() + " Y: " + tile.getRectangle().getY() + " Intersects: X: " + (x + tileHalfWidth) + " | " + (y + tileHalfWidth));
                     return Optional.of(tile);
                 }
             }

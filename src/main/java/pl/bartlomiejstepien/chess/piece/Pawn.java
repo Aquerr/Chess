@@ -74,7 +74,6 @@ public class Pawn extends ChessPiece
         final ChessPiece chessPieceAtNewPosition = newTile.getChessPiece();
         if (absDistanceY == 1 && absDistanceX == 0) // One tile (normal move)
         {
-            System.out.println("Checking position in front of Pawn row=" + newTile.getRow() + " column=" + newTile.getColumn() + ". ChessPiece not exists = " + (chessPieceAtNewPosition == null));
             return chessPieceAtNewPosition == null;
         }
         else if (canMoveTwoTiles(newTile, absDistanceX, absDistanceY))// Two tiles (first move)
