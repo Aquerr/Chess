@@ -42,32 +42,66 @@ public class Queen extends ChessPiece
 
         final ChessBoard.Tile ourTile = super.getTile();
 
+//        int testRow = ourTile.getRow();
+//        int testColumn = ourTile.getColumn();
+
         int newColumn = tile.getColumn();
         int newRow = tile.getRow();
+//
+//        final ChessBoard.Tile startTile = tile.getRow() >
+//        int maxRow = Math.max(testRow, tile.getRow());
+//        int maxColumn = Math.max(testColumn, tile.getColumn());
+//        int minRow = Math.min(testRow, tile.getRow());
+//        int minColumn = Math.min(testColumn, tile.getColumn());
+
+//        while (true)
+//        {
+//            final ChessBoard.Tile newTile = ChessGame.getGame().getChessBoard().getTileAt(minRow, minColumn);
+//            if (newTile != this.getTile() && newTile.getChessPiece() != null)
+//                return true;
+//
+//            if (minColumn == maxColumn && minRow == maxRow)
+//                break;
+//
+//            if (minRow < maxRow)
+//                minRow++;
+//            if (minColumn < maxColumn)
+//                minColumn++;
+//        }
+
+//        for (int row = minRow; row < maxRow; row++)
+//        {
+//            for (int column = minColumn; column < maxColumn; column++)
+//            {
+//
+//            }
+//        }
+
+//        return false;
 
         // Left-down
-        if (ourTile.getColumn() < tile.getColumn() && ourTile.getRow() > tile.getRow())
-        {
-            newColumn = tile.getColumn() - 1;
-            newRow = tile.getRow() + 1;
-        }
-        // Left-up
-        else if (ourTile.getColumn() < tile.getColumn() && ourTile.getRow() < tile.getRow())
+        if (ourTile.getColumn() < tile.getColumn() && ourTile.getRow() < tile.getRow())
         {
             newColumn = tile.getColumn() - 1;
             newRow = tile.getRow() - 1;
         }
-        // Right-down
-        else if (ourTile.getColumn() > tile.getColumn() && ourTile.getRow() > tile.getRow())
+        // Left-up
+        else if (ourTile.getColumn() < tile.getColumn() && ourTile.getRow() > tile.getRow())
         {
-            newColumn = tile.getColumn() + 1;
+            newColumn = tile.getColumn() - 1;
             newRow = tile.getRow() + 1;
         }
-        // Right-up
+        // Right-down
         else if (ourTile.getColumn() > tile.getColumn() && ourTile.getRow() < tile.getRow())
         {
             newColumn = tile.getColumn() + 1;
             newRow = tile.getRow() - 1;
+        }
+        // Right-up
+        else if (ourTile.getColumn() > tile.getColumn() && ourTile.getRow() > tile.getRow())
+        {
+            newColumn = tile.getColumn() + 1;
+            newRow = tile.getRow() + 1;
         }
         // Left and Right
         else if (ourTile.getRow() == tile.getRow())

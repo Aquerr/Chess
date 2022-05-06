@@ -13,13 +13,14 @@ import java.util.*;
 public class ChessBoard
 {
     public static final int TILE_SIZE = 60;
+    public static final int NUMBER_OF_ROWS = 8;
 
-    private final ChessPiece[][] chessBoardFigures = new ChessPiece[8][8];
-    private final Tile[][] chessBoardTiles = new Tile[8][8];
+    private final ChessPiece[][] chessBoardFigures = new ChessPiece[NUMBER_OF_ROWS][NUMBER_OF_ROWS];
+    private final Tile[][] chessBoardTiles = new Tile[NUMBER_OF_ROWS][NUMBER_OF_ROWS];
 
-    public Tile[][] getChessBoardTiles()
+    public void putTileAt(int row, int column, Tile tile)
     {
-        return this.chessBoardTiles;
+        this.chessBoardTiles[NUMBER_OF_ROWS - row][column - 1] = tile;
     }
 
     public List<Tile> getChessBoardTilesAsList()
@@ -36,7 +37,7 @@ public class ChessBoard
     {
         try
         {
-            return this.chessBoardTiles[row - 1][column - 1];
+            return this.chessBoardTiles[NUMBER_OF_ROWS - row][column - 1];
         }
         catch (Exception e)
         {
@@ -48,7 +49,7 @@ public class ChessBoard
     {
         try
         {
-            return this.chessBoardFigures[row - 1][column - 1];
+            return this.chessBoardFigures[NUMBER_OF_ROWS - row][column - 1];
         }
         catch (Exception e)
         {
@@ -75,9 +76,9 @@ public class ChessBoard
 
     public Tile putFigureAtTile(int row, int column, ChessPiece chessPiece)
     {
-        this.chessBoardFigures[row - 1][column - 1] = chessPiece;
-        this.chessBoardTiles[row - 1][column - 1].setFigure(chessPiece);
-        return this.chessBoardTiles[row - 1][column - 1];
+        this.chessBoardFigures[NUMBER_OF_ROWS - row][column - 1] = chessPiece;
+        this.chessBoardTiles[NUMBER_OF_ROWS - row][column - 1].setFigure(chessPiece);
+        return this.chessBoardTiles[NUMBER_OF_ROWS - row][column - 1];
     }
 
     public static final class Tile
@@ -97,7 +98,7 @@ public class ChessBoard
             this.row = row;
             this.column = column;
 
-            this.rectangle = new Rectangle(column * TILE_SIZE - ChessBoard.TILE_SIZE, row * TILE_SIZE - ChessBoard.TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            this.rectangle = new Rectangle(column * TILE_SIZE - ChessBoard.TILE_SIZE, NUMBER_OF_ROWS * TILE_SIZE - (row * TILE_SIZE), TILE_SIZE, TILE_SIZE);
             this.rectangle.setFill(color);
             rectangle.setStrokeType(StrokeType.CENTERED);
 

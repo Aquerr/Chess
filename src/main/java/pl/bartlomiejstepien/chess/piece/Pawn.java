@@ -26,11 +26,11 @@ public class Pawn extends ChessPiece
             isFirstMove = false;
         }
 
-        if (newTile.getRow() == 8 && super.getSide() == Side.BLACK)
+        if (newTile.getRow() == 1 && super.getSide() == Side.BLACK)
         {
             replaceWithChosenChessPiece(newTile);
         }
-        else if (newTile.getRow() == 1 && super.getSide() == Side.WHITE)
+        else if (newTile.getRow() == 8 && super.getSide() == Side.WHITE)
         {
             replaceWithChosenChessPiece(newTile);
         }
@@ -61,12 +61,12 @@ public class Pawn extends ChessPiece
         if (super.getSide() == Side.WHITE)
         {
             //Go upwards
-            if (newTile.getRow() > currentTile.getRow())
+            if (newTile.getRow() < currentTile.getRow())
                 return false;
         }
         else
         {
-            if (newTile.getRow() < currentTile.getRow())
+            if (newTile.getRow() > currentTile.getRow())
                 return false;
         }
 
@@ -94,17 +94,17 @@ public class Pawn extends ChessPiece
 
         if (super.getSide() == Side.WHITE)
         {
-            if (newTile.getRow() < super.getTile().getRow())
+            if (newTile.getRow() > super.getTile().getRow())
             {
-                final ChessPiece chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(super.getTile().getRow() - 1, super.getTile().getColumn());
+                final ChessPiece chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(super.getTile().getRow() + 1, super.getTile().getColumn());
                 return chessPiece == null;
             }
         }
         else
         {
-            if (newTile.getRow() > super.getTile().getRow())
+            if (newTile.getRow() < super.getTile().getRow())
             {
-                final ChessPiece chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(super.getTile().getRow() + 1, super.getTile().getColumn());
+                final ChessPiece chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(super.getTile().getRow() - 1, super.getTile().getColumn());
                 return chessPiece == null;
             }
         }

@@ -43,9 +43,8 @@ public abstract class ChessPiece
         this.tile = chessBoard.putFigureAtTile(position.getRow(), position.getColumn(), this);
 
         this.rectangle = new Rectangle(ChessBoard.TILE_SIZE, ChessBoard.TILE_SIZE);
-        this.rectangle.setFill(Color.WHITE);
-        this.rectangle.setX(position.getColumn() * ChessBoard.TILE_SIZE - ChessBoard.TILE_SIZE);
-        this.rectangle.setY(position.getRow() * ChessBoard.TILE_SIZE - ChessBoard.TILE_SIZE);
+        this.rectangle.setX(this.tile.getRectangle().getX());
+        this.rectangle.setY(this.tile.getRectangle().getY());
 
         this.image = new Image(imageUrl);
         this.rectangle.setFill(new ImagePattern(this.image));
@@ -117,7 +116,7 @@ public abstract class ChessPiece
             final int rectangleX = (int)rectangle.getX();
             final int rectangleY = (int)rectangle.getY();
 
-            System.out.println("Mouse Released at Tile X: " + tile.getRectangle().getX() + " Y: " + tile.getRectangle().getY() + " Mouse Pos: X: " + (mouseDragEvent.getX()) + " | Y: " + (mouseDragEvent.getY()));
+            System.out.println("Mouse Released at Tile: row=" + tile.getRow() + " column=" + tile.getRectangle().getY() + " Mouse Pos: X: " + (mouseDragEvent.getX()) + " | Y: " + (mouseDragEvent.getY()));
 
             // Get tile the mouse is above
             final Optional<ChessBoard.Tile> optionalTile = ChessGame.getGame().getChessBoard().getIntersectingTile(rectangleX, rectangleY);
@@ -272,5 +271,17 @@ public abstract class ChessPiece
         {
             tile.getRectangle().setEffect(null);
         }
+    }
+
+    @Override
+    public String toString()
+    {
+        return "ChessPiece{" +
+                "side=" + side +
+                ", rectangle=" + rectangle +
+                ", image=" + image +
+                ", lastX=" + lastX +
+                ", lastY=" + lastY +
+                '}';
     }
 }

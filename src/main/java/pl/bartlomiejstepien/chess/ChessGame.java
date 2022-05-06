@@ -35,6 +35,7 @@ import pl.bartlomiejstepien.chess.piece.*;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Timer;
@@ -248,35 +249,35 @@ public class ChessGame extends Application
         // Pawns
         for (int i = 1; i <= 8; i++)
         {
-            final Pawn blackPawn = new Pawn(Side.BLACK, new ChessboardPosition(2, i));
-            final Pawn whitePawn = new Pawn(Side.WHITE, new ChessboardPosition(7, i));
+            final Pawn blackPawn = new Pawn(Side.BLACK, new ChessboardPosition(7, i));
+            final Pawn whitePawn = new Pawn(Side.WHITE, new ChessboardPosition(2, i));
         }
 
         // Kings
-        this.blackKing = new King(Side.BLACK, new ChessboardPosition(1,5));
-        this.whiteKing = new King(Side.WHITE, new ChessboardPosition(8,5));
+        this.blackKing = new King(Side.BLACK, new ChessboardPosition(8,5));
+        this.whiteKing = new King(Side.WHITE, new ChessboardPosition(1,5));
 
         // Queens
-        final Queen blackQueen = new Queen(Side.BLACK, new ChessboardPosition(1, 4));
-        final Queen whiteQueen = new Queen(Side.WHITE, new ChessboardPosition(8, 4));
+        final Queen blackQueen = new Queen(Side.BLACK, new ChessboardPosition(8, 4));
+        final Queen whiteQueen = new Queen(Side.WHITE, new ChessboardPosition(1, 4));
 
         // Rooks
-        final Rook blackRook1 = new Rook(Side.BLACK, new ChessboardPosition(1, 1));
-        final Rook blackRook2 = new Rook(Side.BLACK, new ChessboardPosition(1, 8));
-        final Rook whiteRook1 = new Rook(Side.WHITE, new ChessboardPosition(8, 1));
-        final Rook whiteRook2 = new Rook(Side.WHITE, new ChessboardPosition(8, 8));
+        final Rook blackRook1 = new Rook(Side.BLACK, new ChessboardPosition(8, 1));
+        final Rook blackRook2 = new Rook(Side.BLACK, new ChessboardPosition(8, 8));
+        final Rook whiteRook1 = new Rook(Side.WHITE, new ChessboardPosition(1, 1));
+        final Rook whiteRook2 = new Rook(Side.WHITE, new ChessboardPosition(1, 8));
 
         // Knights
-        final Knight blackKnight1 = new Knight(Side.BLACK, new ChessboardPosition(1, 2));
-        final Knight blackKnight2 = new Knight(Side.BLACK, new ChessboardPosition(1, 7));
-        final Knight whiteKnight1 = new Knight(Side.WHITE, new ChessboardPosition(8, 2));
-        final Knight whiteKnight2 = new Knight(Side.WHITE, new ChessboardPosition(8, 7));
+        final Knight blackKnight1 = new Knight(Side.BLACK, new ChessboardPosition(8, 2));
+        final Knight blackKnight2 = new Knight(Side.BLACK, new ChessboardPosition(8, 7));
+        final Knight whiteKnight1 = new Knight(Side.WHITE, new ChessboardPosition(1, 2));
+        final Knight whiteKnight2 = new Knight(Side.WHITE, new ChessboardPosition(1, 7));
 
         // Bishops
-        final Bishop blackBishop1 = new Bishop(Side.BLACK, new ChessboardPosition(1, 3));
-        final Bishop blackBishop2 = new Bishop(Side.BLACK, new ChessboardPosition(1, 6));
-        final Bishop whiteBishop1 = new Bishop(Side.WHITE, new ChessboardPosition(8, 3));
-        final Bishop whiteBishop2 = new Bishop(Side.WHITE, new ChessboardPosition(8, 6));
+        final Bishop blackBishop1 = new Bishop(Side.BLACK, new ChessboardPosition(8, 3));
+        final Bishop blackBishop2 = new Bishop(Side.BLACK, new ChessboardPosition(8, 6));
+        final Bishop whiteBishop1 = new Bishop(Side.WHITE, new ChessboardPosition(1, 3));
+        final Bishop whiteBishop2 = new Bishop(Side.WHITE, new ChessboardPosition(1, 6));
     }
 
     private void drawChessboard()
@@ -289,38 +290,39 @@ public class ChessGame extends Application
         Function<Color, Color> colorChanger = (color) -> color == Color.NAVAJOWHITE ? Color.SADDLEBROWN : Color.NAVAJOWHITE;
         Color color = Color.SADDLEBROWN;
 
-        char letter = 'A';
-        for (int row = 1; row <= 9; row++)
+        int startPosX = 1;
+        int startPosY = 1;
+
+        for (int row = 0; row <= ChessBoard.NUMBER_OF_ROWS; row++)
         {
-            for (int column = 1; column <= 9; column++)
+            char letter = 'A';
+            for (int column = 0; column <= ChessBoard.NUMBER_OF_ROWS; column++)
             {
-                // Letters
-                if (row == 1 && column == 1)
+                if (row == 0 && column == 0)
                 {
                     continue;
                 }
-                else if (row == 1)
+                else if (row == 0) // Letters
                 {
                     final Label label = new Label(String.valueOf(letter));
-                    label.setTranslateX((column - 1) * ChessBoard.TILE_SIZE - ChessBoard.TILE_SIZE / 2);
+                    label.setTranslateX(column * ChessBoard.TILE_SIZE - ChessBoard.TILE_SIZE / 2);
                     label.setTranslateY(-20);
                     this.chessBoardGroup.getChildren().add(label);
                     letter++;
                 }
-                // Numbers
-                else if (column == 1)
+                else if (column == 0) // Numbers
                 {
-                    final Label label = new Label(String.valueOf(10 - row));
-                    label.setTranslateY((row - 1) * ChessBoard.TILE_SIZE - ChessBoard.TILE_SIZE / 2);
+                    final Label label = new Label(String.valueOf(9 - row));
                     label.setTranslateX(-20);
+                    label.setTranslateY(row * ChessBoard.TILE_SIZE - ChessBoard.TILE_SIZE / 2);
                     this.chessBoardGroup.getChildren().add(label);
                 }
                 // Actual Tiles
                 else
                 {
-                    final ChessBoard.Tile tile = new ChessBoard.Tile(String.valueOf(letter) + (10 - row), row - 1, column - 1, color);
+                    final ChessBoard.Tile tile = new ChessBoard.Tile(String.valueOf(letter++) + (row), row, column, color);
                     this.chessBoardGroup.getChildren().add(tile.getRectangle());
-                    this.chessBoard.getChessBoardTiles()[row - 2][column - 2] = tile;
+                    this.chessBoard.putTileAt(row, column, tile);
 
                     color = colorChanger.apply(color);
                 }
