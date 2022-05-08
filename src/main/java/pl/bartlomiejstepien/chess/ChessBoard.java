@@ -1,6 +1,9 @@
 package pl.bartlomiejstepien.chess;
 
 import javafx.event.EventHandler;
+import javafx.scene.effect.Blend;
+import javafx.scene.effect.BlendMode;
+import javafx.scene.effect.Effect;
 import javafx.scene.effect.Glow;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
@@ -9,6 +12,7 @@ import javafx.scene.shape.StrokeType;
 import pl.bartlomiejstepien.chess.piece.ChessPiece;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class ChessBoard
 {
@@ -173,6 +177,8 @@ public class ChessBoard
 
     public static class HighlightTileEventHandler implements EventHandler<MouseEvent>
     {
+        public static final Function<Rectangle, Effect> HIGHLIGHT_EFFECT = rectangle -> new Glow(0.5);
+
         private final Rectangle rectangle;
         private final boolean enter;
 
@@ -187,7 +193,7 @@ public class ChessBoard
         {
             if (enter)
             {
-                rectangle.setEffect(new Glow(0.5));
+                rectangle.setEffect(new Blend(BlendMode.ADD, rectangle.getEffect(), HIGHLIGHT_EFFECT.apply(rectangle)));
             }
             else
             {

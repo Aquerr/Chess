@@ -289,10 +289,6 @@ public class ChessGame extends Application
 
         Function<Color, Color> colorChanger = (color) -> color == Color.NAVAJOWHITE ? Color.SADDLEBROWN : Color.NAVAJOWHITE;
         Color color = Color.SADDLEBROWN;
-
-        int startPosX = 1;
-        int startPosY = 1;
-
         for (int row = 0; row <= ChessBoard.NUMBER_OF_ROWS; row++)
         {
             char letter = 'A';
@@ -370,6 +366,7 @@ public class ChessGame extends Application
             else
                 getAliveWhiteFigures().remove(chessPiece);
             getChessBoardView().getChildren().remove(chessPiece.getRectangle());
+            chessBoard.putFigureAtTile(chessPiece.getTile().getRow(), chessPiece.getTile().getColumn(), null);
         }
     }
 

@@ -23,7 +23,14 @@ public class Pawn extends ChessPiece
             int absDistanceY = Math.abs(newTile.getRow() - super.getTile().getRow());
             if (absDistanceY == 2)
                 lastMoveWasDoubleMove = true;
+            else
+                lastMoveWasDoubleMove = false;
             isFirstMove = false;
+        }
+
+        if (canDoEnPassant(newTile))
+        {
+            destroyPawnInEnPassant(newTile);
         }
 
         if (newTile.getRow() == 1 && super.getSide() == Side.BLACK)
@@ -82,9 +89,50 @@ public class Pawn extends ChessPiece
         }
         else if (absDistanceY == 1 && absDistanceX == 1) // Diagonal move (attack)
         {
-            return chessPieceAtNewPosition != null && !chessPieceAtNewPosition.getSide().equals(this.getSide());
+            if(chessPieceAtNewPosition != null && !chessPieceAtNewPosition.getSide().equals(this.getSide())) // Normal attack
+                return true;
+            else return canDoEnPassant(newTile); // En passant attack
         }
         else return false;
+    }
+
+    private void destroyPawnInEnPassant(ChessBoard.Tile newTile)
+    {
+        ChessPiece chessPiece;
+        if (getSide() == Side.WHITE)
+        {
+            chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(newTile.getRow() - 1, newTile.getColumn());
+        }
+        else
+        {
+            chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(newTile.getRow() + 1, newTile.getColumn());
+        }
+
+        if (chessPiece != null)
+        {
+            ChessGame.getGame().destroyPiece(chessPiece);
+        }
+    }
+
+    private boolean canDoEnPassant(ChessBoard.Tile newTile)
+    {
+        int absDistanceY = Math.abs(newTile.getRow() - getTile().getRow());
+        int absDistanceX = Math.abs(newTile.getColumn() - getTile().getColumn());
+
+        if (absDistanceY == 1 && absDistanceX == 1)
+        {
+            ChessPiece chessPiece;
+            if (getSide() == Side.WHITE)
+            {
+                chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(newTile.getRow() - 1, newTile.getColumn());
+            }
+            else
+            {
+                chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(newTile.getRow() + 1, newTile.getColumn());
+            }
+            return chessPiece instanceof Pawn && ((Pawn) chessPiece).isLastMoveDoubleMove();
+        }
+        return false;
     }
 
     private boolean canMoveTwoTiles(final ChessBoard.Tile newTile, int absDistanceX, int absDistanceY)
@@ -110,5 +158,15 @@ public class Pawn extends ChessPiece
         }
 
         return false;
+    }
+
+    public boolean getIsFirstMove()
+    {
+        return this.isFirstMove;
+    }
+
+    public boolean isLastMoveDoubleMove()
+    {
+        return this.lastMoveWasDoubleMove;
     }
 }

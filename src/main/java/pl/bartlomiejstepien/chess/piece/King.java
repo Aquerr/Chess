@@ -94,7 +94,6 @@ public class King extends ChessPiece
         {
             if (chessPiece.canMoveTo(tile))
             {
-                System.out.println(super.getSide().name() + " King will be threatened at tile: " + tile.toString() + " by " + chessPiece.getClass().getName());
                 return true;
             }
         }

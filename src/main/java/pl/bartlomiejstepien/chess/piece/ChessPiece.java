@@ -1,6 +1,7 @@
 package pl.bartlomiejstepien.chess.piece;
 
 import javafx.scene.effect.ColorInput;
+import javafx.scene.effect.Effect;
 import javafx.scene.effect.Shadow;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
@@ -16,9 +17,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 public abstract class ChessPiece
 {
+    public static final Function<Rectangle, Effect> HOVER_EFFECT = (tile) -> new ColorInput(tile.getX() + 5, tile.getY() + 5, tile.getWidth() - 10, tile.getHeight() - 10, Color.LIGHTSTEELBLUE);
+    public static final Function<Rectangle, Effect> CHECK_EFFECT = (tile) -> new Shadow(1, Color.RED);
+
     private ChessBoard.Tile tile;
     private Side side;
 
@@ -205,11 +210,12 @@ public abstract class ChessPiece
         final List<King> kings = Arrays.asList(ChessGame.getGame().getKing(Side.WHITE), ChessGame.getGame().getKing(Side.BLACK));
         for (final King king : kings)
         {
+            System.out.println(Thread.currentThread().getName() + ": " + this.getClass().getName());
             if (king.willBeThreatenedAtTile(king.getTile()))
             {
                 final ChessBoard.Tile kingTile = king.getTile();
                 final Rectangle kingTileRectangle = kingTile.getRectangle();
-                kingTileRectangle.setEffect(new Shadow(1, Color.RED));
+                kingTileRectangle.setEffect(CHECK_EFFECT.apply(kingTileRectangle));
             }
             else
             {
@@ -260,7 +266,7 @@ public abstract class ChessPiece
         for (final ChessBoard.Tile tile : ChessGame.getGame().getChessBoard().getChessBoardTilesAsList())
         {
             if (CompletableFuture.completedFuture(canMoveTo(tile)).join())
-                tile.getRectangle().setEffect(new ColorInput(tile.getRectangle().getX() + 5, tile.getRectangle().getY() + 5, tile.getRectangle().getWidth() - 10, tile.getRectangle().getHeight() - 10, Color.LIGHTSTEELBLUE));
+                tile.getRectangle().setEffect(HOVER_EFFECT.apply(tile.getRectangle()));
         }
     }
 
