@@ -13,6 +13,8 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
+import javafx.scene.effect.ColorInput;
+import javafx.scene.effect.Effect;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
@@ -25,6 +27,8 @@ import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Popup;
 import javafx.stage.Stage;
+import pl.bartlomiejstepien.chess.history.GameHistory;
+import pl.bartlomiejstepien.chess.history.HistoryLine;
 import pl.bartlomiejstepien.chess.localization.Localization;
 import pl.bartlomiejstepien.chess.online.ChessOnlineConnection;
 import pl.bartlomiejstepien.chess.online.ClientOnlineConnection;
@@ -35,15 +39,20 @@ import pl.bartlomiejstepien.chess.piece.*;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 public class ChessGame extends Application
 {
+    private static final Function<Rectangle, Effect> HOVER_EFFECT = (tile) -> new ColorInput(tile.getX() + 5, tile.getY() + 5, tile.getWidth() - 10, tile.getHeight() - 10, Color.LIGHTSTEELBLUE);
+
     private static final int WINDOW_HEIGHT = 600;
     private static final int WINDOW_WIDTH = 600;
 
@@ -71,6 +80,8 @@ public class ChessGame extends Application
     private final List<ChessPiece> aliveBlackFigures = new LinkedList<>();
 
     private Side currentMoveSide = Side.WHITE;
+
+    private GameHistory gameHistory;
 
     private MenuBar menuBar;
 
@@ -352,6 +363,14 @@ public class ChessGame extends Application
         return this.aliveBlackFigures;
     }
 
+    public List<ChessPiece> getAllAliveFigures()
+    {
+        List<ChessPiece> allPieces = new ArrayList<>();
+        allPieces.addAll(this.aliveWhiteFigures);
+        allPieces.addAll(this.aliveBlackFigures);
+        return allPieces;
+    }
+
     public List<ChessPiece> getAliveFigures(Side side)
     {
         return side == Side.BLACK ? getAliveBlackFigures() : getAliveWhiteFigures();
@@ -480,13 +499,129 @@ public class ChessGame extends Application
         return this.chessOnlineConnection;
     }
 
+    public GameHistory getGameHistory()
+    {
+        return gameHistory;
+    }
+
     public void restartGame()
     {
+        this.gameHistory = new GameHistory();
         this.chessBoard = new ChessBoard();
         this.mainGroup.getChildren().remove(this.chessBoardGroup);
         drawChessboard();
         setupChessFigures();
+        registerEventHandlers();
         restartTimer();
+    }
+
+    private void registerEventHandlers()
+    {
+        // Register click handler
+        for (ChessPiece chessPiece : getAllAliveFigures())
+        {
+            Rectangle rectangle = chessPiece.getRectangle();
+            rectangle.setOnMousePressed(mouseClickEvent -> {
+                if (!canMoveChessPiece(chessPiece))
+                    return;
+
+                // Highlight possible movements
+                highlightPossibleMovements(chessPiece);
+                System.out.println("Mouse Pressed at X: " + (mouseClickEvent.getX()) + " | Y: " + (mouseClickEvent.getY()));
+            });
+
+            rectangle.setOnMouseDragged(mouseEvent ->
+            {
+                //TODO: Improve this... maybe by locking all tiles?
+                if (!canMoveChessPiece(chessPiece))
+                    return;
+
+                double mouseX = mouseEvent.getX();
+                double mouseY = mouseEvent.getY();
+
+                rectangle.setX(mouseX - rectangle.getWidth() / 2);
+                rectangle.setY(mouseY - rectangle.getHeight() / 2);
+            });
+
+            rectangle.setOnMouseReleased(mouseDragEvent ->
+            {
+                unHighlightPossibleMovements(chessPiece);
+                ChessBoard.Tile lastTile = chessPiece.getTile();
+
+                final int rectangleX = (int)rectangle.getX();
+                final int rectangleY = (int)rectangle.getY();
+
+
+                // Get tile the mouse is above
+                final Optional<ChessBoard.Tile> optionalTile = ChessGame.getGame().getChessBoard().getIntersectingTile(rectangleX, rectangleY);
+                if (optionalTile.isEmpty())
+                {
+                    // Bring figure back to initial position
+                    rectangle.setX(lastTile.getRectangle().getX());
+                    rectangle.setY(lastTile.getRectangle().getY());
+                    return;
+                }
+
+                final ChessBoard.Tile newTile = optionalTile.get();
+                System.out.println("Mouse Released at Tile: row=" + newTile.getRow() + " column=" + newTile.getColumn() + " Mouse Pos: X: " + (mouseDragEvent.getX()) + " | Y: " + (mouseDragEvent.getY()));
+
+                // Check if chess figure can move to the tile the mouse is above.
+                if (!chessPiece.canMoveTo(newTile))
+                {
+                    // Bring figure back to initial position
+                    rectangle.setX(lastTile.getRectangle().getX());
+                    rectangle.setY(lastTile.getRectangle().getY());
+                    return;
+                }
+
+                if(ChessGame.getGame().isOnline())
+                {
+                    ChessGame.getGame().getOnlineConnection().sendMessage(new MovePacket(lastTile.getChessboardPosition(), newTile.getChessboardPosition()));
+                }
+
+                chessPiece.moveTo(newTile);
+                gameHistory.add(new HistoryLine(chessPiece, newTile));
+            });
+
+            rectangle.addEventHandler(MouseEvent.MOUSE_ENTERED, new ChessBoard.HighlightTileEventHandler(rectangle, true));
+            rectangle.addEventHandler(MouseEvent.MOUSE_EXITED, new ChessBoard.HighlightTileEventHandler(rectangle, false));
+        }
+    }
+
+    private void highlightPossibleMovements(ChessPiece chessPiece)
+    {
+        System.out.println("Highlighting possible movements");
+        for (final ChessBoard.Tile tile : ChessGame.getGame().getChessBoard().getChessBoardTilesAsList())
+        {
+            if (CompletableFuture.completedFuture(chessPiece.canMoveTo(tile)).join())
+                tile.getRectangle().setEffect(HOVER_EFFECT.apply(tile.getRectangle()));
+        }
+    }
+
+    private void unHighlightPossibleMovements(ChessPiece chessPiece)
+    {
+        System.out.println("Hiding possible movements");
+        for (final ChessBoard.Tile tile : ChessGame.getGame().getChessBoard().getChessBoardTilesAsList())
+        {
+            if (CompletableFuture.completedFuture(chessPiece.canMoveTo(tile)).join())
+                tile.getRectangle().setEffect(null);
+        }
+    }
+
+    private boolean canMoveChessPiece(ChessPiece chessPiece)
+    {
+        Side side = ChessGame.getGame().getCurrentMoveSide();
+        Side thisChessSide = chessPiece.getSide();
+        boolean isOnline = ChessGame.getGame().isOnline();
+
+        if (isOnline)
+        {
+            return ChessGame.getGame().getOnlineConnection().getChessSide().equals(side) && side.equals(thisChessSide);
+        }
+        else
+        {
+            return side.equals(thisChessSide);
+        }
     }
 
     private void setupUI()

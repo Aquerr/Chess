@@ -4,6 +4,10 @@ import javafx.application.Platform;
 import pl.bartlomiejstepien.chess.ChessBoard;
 import pl.bartlomiejstepien.chess.ChessGame;
 import pl.bartlomiejstepien.chess.ChessboardPosition;
+import pl.bartlomiejstepien.chess.history.HistoryLine;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class Pawn extends ChessPiece
 {
@@ -130,9 +134,26 @@ public class Pawn extends ChessPiece
             {
                 chessPiece = ChessGame.getGame().getChessBoard().getFigureAt(newTile.getRow() + 1, newTile.getColumn());
             }
-            return chessPiece instanceof Pawn && ((Pawn) chessPiece).isLastMoveDoubleMove();
+            return isEnemyPawnWithLastDoubleMove(chessPiece)
+                    && isLastMoveDoubleMove(chessPiece);
         }
         return false;
+    }
+
+    private boolean isEnemyPawnWithLastDoubleMove(ChessPiece chessPiece)
+    {
+        return chessPiece instanceof Pawn
+                && !chessPiece.getSide().equals(this.getSide())
+                && ((Pawn) chessPiece).isLastMoveDoubleMove();
+    }
+
+    private boolean isLastMoveDoubleMove(ChessPiece chessPiece)
+    {
+        final List<HistoryLine> history = ChessGame.getGame().getGameHistory().getHistory().stream()
+                .filter(historyLine -> historyLine.getSide().equals(chessPiece.getSide()))
+                .collect(Collectors.toList());
+        final HistoryLine lastMove = ChessGame.getGame().getGameHistory()
+        return ChessGame.getGame().getGameHistory().getLastMove(chessPiece.getSide()).getTile().equals(chessPiece.getTile().getName());
     }
 
     private boolean canMoveTwoTiles(final ChessBoard.Tile newTile, int absDistanceX, int absDistanceY)

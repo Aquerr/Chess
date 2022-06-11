@@ -1,27 +1,21 @@
 package pl.bartlomiejstepien.chess.piece;
 
-import javafx.scene.effect.ColorInput;
 import javafx.scene.effect.Effect;
 import javafx.scene.effect.Shadow;
 import javafx.scene.image.Image;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Rectangle;
 import pl.bartlomiejstepien.chess.ChessBoard;
 import pl.bartlomiejstepien.chess.ChessGame;
 import pl.bartlomiejstepien.chess.ChessboardPosition;
-import pl.bartlomiejstepien.chess.online.packets.MovePacket;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 public abstract class ChessPiece
 {
-    public static final Function<Rectangle, Effect> HOVER_EFFECT = (tile) -> new ColorInput(tile.getX() + 5, tile.getY() + 5, tile.getWidth() - 10, tile.getHeight() - 10, Color.LIGHTSTEELBLUE);
     public static final Function<Rectangle, Effect> CHECK_EFFECT = (tile) -> new Shadow(1, Color.RED);
 
     private ChessBoard.Tile tile;
@@ -29,10 +23,6 @@ public abstract class ChessPiece
 
     private Rectangle rectangle;
     private Image image;
-
-    // For dragging
-    private double lastX;
-    private double lastY;
 
     protected ChessPiece(final Side side, final ChessboardPosition position, final String imageUrl)
     {
@@ -54,11 +44,6 @@ public abstract class ChessPiece
         this.image = new Image(imageUrl);
         this.rectangle.setFill(new ImagePattern(this.image));
 
-        this.lastY = this.rectangle.getY();
-        this.lastX = this.rectangle.getX();
-
-        setupDragEvents(this);
-
         // Add chess piece to alive pieces
         if (this.side == Side.BLACK)
         {
@@ -71,89 +56,6 @@ public abstract class ChessPiece
             chessGame.getChessBoardView().getChildren().add(this.getRectangle());
 
         }
-    }
-
-    private boolean canMoveThisChessSide()
-    {
-        Side side = ChessGame.getGame().getCurrentMoveSide();
-        Side thisChessSide = this.getSide();
-        boolean isOnline = ChessGame.getGame().isOnline();
-
-        if (isOnline)
-        {
-            return ChessGame.getGame().getOnlineConnection().getChessSide().equals(side) && side.equals(thisChessSide);
-        }
-        else
-        {
-            return side.equals(thisChessSide);
-        }
-    }
-
-    private void setupDragEvents(ChessPiece chessPiece)
-    {
-        Rectangle rectangle = chessPiece.getRectangle();
-        rectangle.setOnMousePressed(mouseClickEvent -> {
-            if (!canMoveThisChessSide())
-                return;
-
-            // Highlight possible movements
-            highlightPossibleMovements();
-            System.out.println("Mouse Pressed at Tile X: " + tile.getRectangle().getX() + " Y: " + tile.getRectangle().getY() + " Mouse Pos: X: " + (mouseClickEvent.getX()) + " | Y: " + (mouseClickEvent.getY()));
-        });
-
-        rectangle.setOnMouseDragged(mouseEvent ->
-        {
-            //TODO: Improve this... maybe by locking all tiles?
-            if (!canMoveThisChessSide())
-                return;
-
-            double mouseX = mouseEvent.getX();
-            double mouseY = mouseEvent.getY();
-
-            rectangle.setX(mouseX - rectangle.getWidth() / 2);
-            rectangle.setY(mouseY - rectangle.getHeight() / 2);
-        });
-
-        rectangle.setOnMouseReleased(mouseDragEvent ->
-        {
-            unHighlightPossibleMovements();
-
-            final int rectangleX = (int)rectangle.getX();
-            final int rectangleY = (int)rectangle.getY();
-
-            System.out.println("Mouse Released at Tile: row=" + tile.getRow() + " column=" + tile.getRectangle().getY() + " Mouse Pos: X: " + (mouseDragEvent.getX()) + " | Y: " + (mouseDragEvent.getY()));
-
-            // Get tile the mouse is above
-            final Optional<ChessBoard.Tile> optionalTile = ChessGame.getGame().getChessBoard().getIntersectingTile(rectangleX, rectangleY);
-            if (optionalTile.isEmpty())
-            {
-                // Bring figure back to initial position
-                rectangle.setX(lastX);
-                rectangle.setY(lastY);
-                return;
-            }
-
-            final ChessBoard.Tile newTile = optionalTile.get();
-
-            // Check if chess figure can move to the tile the mouse is above.
-            if (!canMoveTo(newTile))
-            {
-                // Bring figure back to initial position
-                rectangle.setX(lastX);
-                rectangle.setY(lastY);
-                return;
-            }
-
-            if(ChessGame.getGame().isOnline())
-            {
-                ChessGame.getGame().getOnlineConnection().sendMessage(new MovePacket(this.getTile().getChessboardPosition(), newTile.getChessboardPosition()));
-            }
-
-            moveTo(newTile);
-        });
-
-        rectangle.addEventHandler(MouseEvent.MOUSE_ENTERED, new ChessBoard.HighlightTileEventHandler(rectangle, true));
-        rectangle.addEventHandler(MouseEvent.MOUSE_EXITED, new ChessBoard.HighlightTileEventHandler(rectangle, false));
     }
 
     public Rectangle getRectangle()
@@ -199,8 +101,6 @@ public abstract class ChessPiece
         chessBoard.putFigureAtTile(this.tile.getRow(), this.tile.getColumn(), null);
         chessBoard.putFigureAtTile(newTile.getRow(), newTile.getColumn(), this);
         this.tile = newTile;
-        this.lastX = newTile.getRectangle().getX();
-        this.lastY = newTile.getRectangle().getY();
         this.rectangle.setX(newTile.getRectangle().getX());
         this.rectangle.setY(newTile.getRectangle().getY());
 
@@ -210,7 +110,6 @@ public abstract class ChessPiece
         final List<King> kings = Arrays.asList(ChessGame.getGame().getKing(Side.WHITE), ChessGame.getGame().getKing(Side.BLACK));
         for (final King king : kings)
         {
-            System.out.println(Thread.currentThread().getName() + ": " + this.getClass().getName());
             if (king.willBeThreatenedAtTile(king.getTile()))
             {
                 final ChessBoard.Tile kingTile = king.getTile();
@@ -227,7 +126,7 @@ public abstract class ChessPiece
         System.out.printf("Moved %s to %s%n", this.getClass().getSimpleName(), newTile);
     }
 
-    protected abstract boolean canMoveTo(final ChessBoard.Tile tile);
+    public abstract boolean canMoveTo(final ChessBoard.Tile tile);
 
     protected boolean willUncoverKing(final ChessBoard.Tile newTile)
     {
@@ -260,25 +159,6 @@ public abstract class ChessPiece
         return willKingBeThreatened;
     }
 
-    public void highlightPossibleMovements()
-    {
-        System.out.println("Highlighting possible movements");
-        for (final ChessBoard.Tile tile : ChessGame.getGame().getChessBoard().getChessBoardTilesAsList())
-        {
-            if (CompletableFuture.completedFuture(canMoveTo(tile)).join())
-                tile.getRectangle().setEffect(HOVER_EFFECT.apply(tile.getRectangle()));
-        }
-    }
-
-    public void unHighlightPossibleMovements()
-    {
-        System.out.println("Hiding possible movements");
-        for (final ChessBoard.Tile tile : ChessGame.getGame().getChessBoard().getChessBoardTilesAsList())
-        {
-            tile.getRectangle().setEffect(null);
-        }
-    }
-
     @Override
     public String toString()
     {
@@ -286,8 +166,6 @@ public abstract class ChessPiece
                 "side=" + side +
                 ", rectangle=" + rectangle +
                 ", image=" + image +
-                ", lastX=" + lastX +
-                ", lastY=" + lastY +
                 '}';
     }
 }
